@@ -51,4 +51,6 @@ The script needs to be run as root, as it binds to port 443 to which the Sonoff 
 
 `sudo python sonota.py`
 
+#### Issues
 
+As we don't override the bootloader which still expects v2 images and our custom firmware might end up in the user2 partition, vanilla Arduino OTA functionality - if provided by your custom image - will *not* work.
