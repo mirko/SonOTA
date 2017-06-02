@@ -5,18 +5,21 @@ This program is based on research documented here:
 
 - https://blog.nanl.de/2017/05/sonota-flashing-itead-sonoff-devices-via-original-ota-mechanism/
 - https://github.com/arendst/Sonoff-Tasmota/issues/476
+- https://wiki.almeroth.com/doku.php?id=projects:sonoff
 
 The script is fairly well documented (I think) - apart from that above stated links should provide some context of what's been done how and why. Feel free to open issue tickets or contact me directly: sonota@nanl.de
 
 #### DNS redirect
 
-The program only works if you made sure the hostname 'eu-disp.coolkit.cc' is being resolved to an IP address assigned to the machine this script is running on.
+~~The program only works if you made sure the hostname 'eu-disp.coolkit.cc' is being resolved to an IP address assigned to the machine this script is running on.~~
 
-On a WiFi router running OpenWrt this can be easily done by adding the following line to `/etc/hosts` and restarting `dnsmasq`:
+~~On a WiFi router running OpenWrt this can be easily done by adding the following line to `/etc/hosts` and restarting `dnsmasq`:~~
 
-`10.23.42.5	eu-disp.coolkit.cc`
+~~`10.23.42.5	eu-disp.coolkit.cc`~~
 
-Adjust IP address and make sure variable `serving_host` in `sonota.py` is set to the same.
+~~Adjust IP address and make sure variable `serving_host` in `sonota.py` is set to the same.~~
+
+No DNS redirect is needed anymore with version 2 as the script can now also provision the Sonoff device and hence specify the `serving_host`.
 
 #### Creation of SSL certificates
 
@@ -47,9 +50,11 @@ Adjust IP address and make sure variable `serving_host` in `sonota.py` is set to
 
 #### Run
 
-The script needs to be run as root, as it binds to port 443 to which the Sonoff device initially sets up a HTTPS POST request.
+~~The script needs to be run as root, as it binds to port 443 to which the Sonoff device initially sets up a HTTPS POST request.~~
 
-`sudo python sonota.py`
+The script can now be run as a regular user; as we are doing the provisioning now, we can also set the port to anything other than 443.
+
+`python3 sonota.py --wifi-ssid foobar --wifi-password ew4Ookie 10.23.42.5`
 
 #### Issues
 
