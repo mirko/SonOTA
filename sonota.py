@@ -351,7 +351,7 @@ if __name__ == '__main__':
                             print("** Please change into the ITEAD WiFi network (ITEAD-100001XXXX)")
                             print("** This application can be kept running.")
                         sleep(2)
-                        print(".", end="")
+                        print(".", end="", flush=True)
                         continue
                 else:
                     break
@@ -418,7 +418,7 @@ if __name__ == '__main__':
                               "sure %s is being assigned to your WiFi interface.")
                         print("** This application can be kept running.")
                     sleep(2)
-                    print(".", end="")
+                    print(".", end="", flush=True)
                     continue
             else:
                 break
