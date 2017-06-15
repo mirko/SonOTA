@@ -116,9 +116,9 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         self.stream.set_nodelay(True)
 
     def on_message(self, message):
-        print("<< WEBSOCKET INPUT")
+        logger.debug("<< WEBSOCKET INPUT")
         dct = json.loads(message)
-        print("<< %s" % json.dumps(dct, indent=4))
+        logger.debug("<< %s" % json.dumps(dct, indent=4))
         # if dct.has_key("action"): # python2
         if "action" in dct:     # python3
             print("~~~ device sent action request, ",
@@ -168,10 +168,10 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                 self.setup_completed = True
         # elif dct.has_key("sequence") and dct.has_key("error"): # python2
         elif "sequence" in dct and "error" in dct:
-            print("~~~ device acknowledged our action request (seq %s) ",
-                  "with error code %d" % (dct['sequence'], dct['error']))
+            logger.debug("~~~ device acknowledged our action request (seq {}}) ",
+                         "with error code {}".format(dct['sequence'], dct['error']))
         else:
-            print("## MOEP! Unknown request/answer from device!")
+            logger.warn("## MOEP! Unknown request/answer from device!")
 
         if self.setup_completed and not self.test:
             # switching relais on and off - for fun and profit!
