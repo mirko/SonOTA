@@ -248,65 +248,73 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             self.test = True
 
         if self.setup_completed and self.test and not self.upgrade:
-            fd = open("static/%s" % upgrade_file_user1, "r")
-            hash_user1 = sha256(fd.read()).hexdigest()
-            fd.close()
-            fd = open("static/%s" % upgrade_file_user2, "r")
-            hash_user2 = sha256(fd.read()).hexdigest()
-            fd.close()
-            data = {
-                "action": "upgrade",
-                "deviceid": dct['deviceid'],
-                "apikey": self.uuid,
-                "userAgent": "app",
-                "sequence": str(int(time() * 1000)),
-                "ts": 0,
-                "params": {
-                    # the device expects two available images, as the original
-                    #   firmware splits the flash into two halfs and flashes
-                    #   the inactive partition (ping-pong).
-                    # as we don't know which partition is (in)active, we
-                    # provide our custom image as user1 as well as user2.
-                    # unfortunately this also means that our firmware image
-                    # must noch exceed FLASH_SIZE / 2 - (bootloader - spiffs)
-                    # TODO: figure out how to build user1 and user2 incl.
-                    #   its necessary differences
-                    # TODO: check whether orig. bootloader can load and boot
-                    #   code bigger than FLASH_SIZE / 2 - (bootloader - spiffs)
-                    # TODO: check if original bootloader can also load v1 images
-                    "binList": [
-                        {
-                            "downloadUrl": "http://%s:8080/ota/%s" %
-                            (args.serving_host, upgrade_file_user1),
-                            # the device expects and checks the sha256 hash of
-                            #   the transmitted file
-                            "digest": hash_user1,
-                            "name": "user1.bin"
-                        },
-                        {
-                            "downloadUrl": "http://%s:8080/ota/%s" %
-                            (args.serving_host, upgrade_file_user2),
-                            # the device expects and checks the sha256 hash of
-                            #   the transmitted file
-                            "digest": hash_user2,
-                            "name": "user2.bin"
-                        }
-                    ],
-                    # if `model` is set to sth. else (I tried) the websocket
-                    #   gets closed in the middle of the JSON transmission
-                    "model": "ITA-GZ1-GL",
-                    # the `version` field doesn't seem to have any effect;
-                    #   nevertheless set it to a ridiculously high number
-                    #   to always be newer than the existing firmware
-                    "version": "23.42.5"
+
+            hash_user1 = self.getFirmwareHash("static/%s" % upgrade_file_user1)
+            hash_user2 = self.getFirmwareHash("static/%s" % upgrade_file_user2)
+
+            if hash_user1 and hash_user2:
+                data = {
+                    "action": "upgrade",
+                    "deviceid": dct['deviceid'],
+                    "apikey": self.uuid,
+                    "userAgent": "app",
+                    "sequence": str(int(time() * 1000)),
+                    "ts": 0,
+                    "params": {
+                        # the device expects two available images, as the original
+                        #   firmware splits the flash into two halfs and flashes
+                        #   the inactive partition (ping-pong).
+                        # as we don't know which partition is (in)active, we
+                        # provide our custom image as user1 as well as user2.
+                        # unfortunately this also means that our firmware image
+                        # must noch exceed FLASH_SIZE / 2 - (bootloader - spiffs)
+                        # TODO: figure out how to build user1 and user2 incl.
+                        #   its necessary differences
+                        # TODO: check whether orig. bootloader can load and boot
+                        #   code bigger than FLASH_SIZE / 2 - (bootloader - spiffs)
+                        # TODO: check if original bootloader can also load v1 images
+                        "binList": [
+                            {
+                                "downloadUrl": "http://%s:8080/ota/%s" %
+                                (args.serving_host, upgrade_file_user1),
+                                # the device expects and checks the sha256 hash of
+                                #   the transmitted file
+                                "digest": hash_user1,
+                                "name": "user1.bin"
+                            },
+                            {
+                                "downloadUrl": "http://%s:8080/ota/%s" %
+                                (args.serving_host, upgrade_file_user2),
+                                # the device expects and checks the sha256 hash of
+                                #   the transmitted file
+                                "digest": hash_user2,
+                                "name": "user2.bin"
+                            }
+                        ],
+                        # if `model` is set to sth. else (I tried) the websocket
+                        #   gets closed in the middle of the JSON transmission
+                        "model": "ITA-GZ1-GL",
+                        # the `version` field doesn't seem to have any effect;
+                        #   nevertheless set it to a ridiculously high number
+                        #   to always be newer than the existing firmware
+                        "version": "23.42.5"
+                    }
                 }
-            }
-            print(">> %s" % json.dumps(data, indent=4))
-            self.write_message(data)
-            self.upgrade = True
+                print(">> %s" % json.dumps(data, indent=4))
+                self.write_message(data)
+                self.upgrade = True
 
     def on_close(self):
         logger.debug("~~ websocket close")
+
+    def getFirmwareHash(self, filePath):
+        hash_user = None
+        try:
+            with open(filePath, "r") as user1:
+                hash_user = sha256(user1.read()).hexdigest()
+        except IOError as e:
+            logger.warn(e)
+        return hash_user
 
 
 app = tornado.web.Application([
