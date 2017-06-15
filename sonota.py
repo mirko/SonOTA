@@ -331,20 +331,22 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         return hash_user
 
 
-app = tornado.web.Application([
-    # handling initial dispatch SHTTP POST call to eu-disp.coolkit.cc
-    (r'/dispatch/device', DispatchDevice),
-    # handling actual payload communication on WebSockets
-    (r'/api/ws', WebSocketHandler),
-    # serving upgrade files via HTTP
-    # overriding get method of tornado.web.StaticFileHandler has some weird
-    #   side effects - as we don't necessarily need our adjustments use default
-    # (r'/ota/(.*)', OTAUpdate, {'path': "static/"})
-    (r'/ota/(.*)', tornado.web.StaticFileHandler, {'path': "static/"})
-])
+def make_app():
+    return tornado.web.Application([
+        # handling initial dispatch SHTTP POST call to eu-disp.coolkit.cc
+        (r'/dispatch/device', DispatchDevice),
+        # handling actual payload communication on WebSockets
+        (r'/api/ws', WebSocketHandler),
+        # serving upgrade files via HTTP
+        # overriding get method of tornado.web.StaticFileHandler has some weird
+        #   side effects - as we don't necessarily need our adjustments use default
+        # (r'/ota/(.*)', OTAUpdate, {'path': "static/"})
+        (r'/ota/(.*)', tornado.web.StaticFileHandler, {'path': "static/"})
+    ])
 
 
 def main():
+    app = make_app()
     net_valid = False
     conn_attempt = 0
 
