@@ -316,8 +316,8 @@ app = tornado.web.Application([
     (r'/ota/(.*)', tornado.web.StaticFileHandler, {'path': "static/"})
 ])
 
-if __name__ == '__main__':
 
+def main():
     net_valid = False
     conn_attempt = 0
 
@@ -437,3 +437,10 @@ if __name__ == '__main__':
     print("~~ Waiting for device to connect")
 
     tornado.ioloop.IOLoop.instance().start()
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (KeyboardInterrupt, SystemExit):
+        print("Quitting.")
