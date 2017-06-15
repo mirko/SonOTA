@@ -56,7 +56,9 @@ parser.add_argument("serving_host", help="The host's ip address which will handl
  Normally the ip address of the WiFi interface of the machine this script is running on.")
 parser.add_argument("--no-prov", help="Do not provision the device with WiFi credentials.\
  Only use if your device is already configured.", action="store_true")
-parser.add_argument("--wifi-ssid", help="The ESSID of the WiFi network the device should eventually connect to.")
+parser.add_argument(
+    "--wifi-ssid",
+     help="The ESSID of the WiFi network the device should eventually connect to.")
 parser.add_argument("--wifi-password", help="The password of the WiFi (WPA/WPA2)\
  network the device should eventually connect to.")
 parser.add_argument("--no-check-ip", help="Do not check for correct network settings\
@@ -64,10 +66,12 @@ parser.add_argument("--no-check-ip", help="Do not check for correct network sett
 args = parser.parse_args()
 
 if args.no_prov and (args.wifi_ssid or args.wifi_password):
-    parser.error("arguments --no-prov and --wifi-ssid | --wifi-password are mutually exclusive")
+    parser.error(
+        "arguments --no-prov and --wifi-ssid | --wifi-password are mutually exclusive")
 
 if (args.wifi_ssid or args.wifi_password) and not (args.wifi_ssid and args.wifi_password):
-    parser.error("arguments --wifi-ssid and --wifi-password must always occur together")
+    parser.error(
+        "arguments --wifi-ssid and --wifi-password must always occur together")
 
 if not args.no_check_ip:
     import netifaces
@@ -78,6 +82,7 @@ class OTAUpdate(tornado.web.StaticFileHandler):
     # FIXME: For some reason that fails horribly!
     #   What did I do wrong trying to override and eventually calling the
     #   original get method?request!
+
     def get(self, path, include_body=True):
         print("<< HTTP GET %s" % self.request.path)
         print(">> %s" % path)
@@ -85,6 +90,7 @@ class OTAUpdate(tornado.web.StaticFileHandler):
 
 
 class DispatchDevice(tornado.web.RequestHandler):
+
     def post(self):
         # telling device where to connect to in order to establish a WebSocket
         #   channel
@@ -104,11 +110,13 @@ class DispatchDevice(tornado.web.RequestHandler):
 
 
 class WebSocketHandler(tornado.websocket.WebSocketHandler):
+
     def open(self, *args):
         logger.debug("<< WEBSOCKET OPEN")
         # the device expects the server to generate and consistently provide
         #   an API key which equals the UUID format
-        # it *must not* be the same apikey which the device uses in its requests
+        # it *must not* be the same apikey which the device uses in its
+        # requests
         self.uuid = str(uuid4())
         self.setup_completed = False
         self.test = False
@@ -168,7 +176,8 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                 self.setup_completed = True
         # elif dct.has_key("sequence") and dct.has_key("error"): # python2
         elif "sequence" in dct and "error" in dct:
-            logger.debug("~~~ device acknowledged our action request (seq {}}) ",
+            logger.debug(
+                "~~~ device acknowledged our action request (seq {}}) ",
                          "with error code {}".format(dct['sequence'], dct['error']))
         else:
             logger.warn("## MOEP! Unknown request/answer from device!")
@@ -272,7 +281,8 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                         #   its necessary differences
                         # TODO: check whether orig. bootloader can load and boot
                         #   code bigger than FLASH_SIZE / 2 - (bootloader - spiffs)
-                        # TODO: check if original bootloader can also load v1 images
+                        # TODO: check if original bootloader can also load v1
+                        # images
                         "binList": [
                             {
                                 "downloadUrl": "http://%s:8080/ota/%s" %
@@ -342,7 +352,9 @@ def main():
             while True:
                 conn_attempt += 1
                 for iface in netifaces.interfaces():
-                    # if not netifaces.ifaddresses(iface).has_key(netifaces.AF_INET): # python2
+                    # if not
+                    # netifaces.ifaddresses(iface).has_key(netifaces.AF_INET):
+                    # python2
                     if netifaces.AF_INET not in netifaces.ifaddresses(iface):   # python3
                         continue
                     for afinet in netifaces.ifaddresses(iface)[netifaces.AF_INET]:
@@ -358,10 +370,12 @@ def main():
                         if(e.args[0] != "IPADDR_ITEAD_NOT_ASSIGNED"):
                             raise
                         if conn_attempt == 1:
-                            print("** No ip address of the ITEAD DHCP range (10.10.7.0/24)",
+                            print(
+                                "** No ip address of the ITEAD DHCP range (10.10.7.0/24)",
                                   "is assigned to any of your interfaces,",
                                   "which means you don't appear to be connected to the IEAD WiFi network.")
-                            print("** Please change into the ITEAD WiFi network (ITEAD-100001XXXX)")
+                            print(
+                                "** Please change into the ITEAD WiFi network (ITEAD-100001XXXX)")
                             print("** This application can be kept running.")
                         sleep(2)
                         print(".", end="", flush=True)
@@ -395,7 +409,8 @@ def main():
         }
         print(">> HTTP POST /10.10.7.1/ap")
         print(">> %s", json.dumps(data, indent=4))
-        resp, cont = http.request("http://10.10.7.1/ap", "POST", json.dumps(data))
+        resp, cont = http.request(
+            "http://10.10.7.1/ap", "POST", json.dumps(data))
         dct = json.loads(cont)
         print("<< %s" % json.dumps(dct, indent=4))
 
@@ -408,7 +423,9 @@ def main():
         while True:
             conn_attempt += 1
             for iface in netifaces.interfaces():
-                # if not netifaces.ifaddresses(iface).has_key(netifaces.AF_INET): # python2
+                # if not
+                # netifaces.ifaddresses(iface).has_key(netifaces.AF_INET): #
+                # python2
                 if netifaces.AF_INET not in netifaces.ifaddresses(iface):   # python3
                     continue
                 for afinet in netifaces.ifaddresses(iface)[netifaces.AF_INET]:
@@ -425,9 +442,11 @@ def main():
                     if(e.args[0] != "IPADDR_SRVHOST_NOT_ASSIGNED"):
                         raise
                     if conn_attempt == 1:
-                        print("** The IP address of <serve_host> (%s) is not " % args.serving_host,
+                        print(
+                            "** The IP address of <serve_host> (%s) is not " % args.serving_host,
                               "assigned to any interface on this machine.")
-                        print("** Please change WiFi network to $ESSID and make ",
+                        print(
+                            "** Please change WiFi network to $ESSID and make ",
                               "sure %s is being assigned to your WiFi interface.")
                         print("** This application can be kept running.")
                     sleep(2)
