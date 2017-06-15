@@ -58,7 +58,7 @@ parser.add_argument("--no-prov", help="Do not provision the device with WiFi cre
  Only use if your device is already configured.", action="store_true")
 parser.add_argument(
     "--wifi-ssid",
-     help="The ESSID of the WiFi network the device should eventually connect to.")
+    help="The ESSID of the WiFi network the device should eventually connect to.")
 parser.add_argument("--wifi-password", help="The password of the WiFi (WPA/WPA2)\
  network the device should eventually connect to.")
 parser.add_argument("--no-check-ip", help="Do not check for correct network settings\
@@ -181,8 +181,12 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         # elif dct.has_key("sequence") and dct.has_key("error"): # python2
         elif "sequence" in dct and "error" in dct:
             logger.debug(
-                "~~~ device acknowledged our action request (seq {}) \
-                with error code {}".format(dct['sequence'], dct['error']))
+                "~~~ device acknowledged our action request (seq {}) "
+                "with error code {}".format(
+                    dct['sequence'],
+                    dct['error']
+                )
+            )
         else:
             logger.warn("## MOEP! Unknown request/answer from device!")
 
@@ -378,8 +382,8 @@ def main():
                         if conn_attempt == 1:
                             print(
                                 "** No ip address of the ITEAD DHCP range (10.10.7.0/24)",
-                                  "is assigned to any of your interfaces,",
-                                  "which means you don't appear to be connected to the IEAD WiFi network.")
+                                "is assigned to any of your interfaces,",
+                                "which means you don't appear to be connected to the IEAD WiFi network.")
                             print(
                                 "** Please change into the ITEAD WiFi network (ITEAD-100001XXXX)")
                             print("** This application can be kept running.")
@@ -450,10 +454,10 @@ def main():
                     if conn_attempt == 1:
                         print(
                             "** The IP address of <serve_host> (%s) is not " % args.serving_host,
-                              "assigned to any interface on this machine.")
+                            "assigned to any interface on this machine.")
                         print(
                             "** Please change WiFi network to $ESSID and make ",
-                              "sure %s is being assigned to your WiFi interface.")
+                            "sure %s is being assigned to your WiFi interface.")
                         print("** This application can be kept running.")
                     sleep(2)
                     print(".", end="", flush=True)
