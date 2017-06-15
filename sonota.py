@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with SonOTA.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import logging
 import argparse
 # using tornado as it provides support for websockets
 import tornado.ioloop
@@ -32,6 +32,11 @@ from time import sleep, time
 from uuid import uuid4
 from hashlib import sha256
 from socket import error as socket_error
+
+logfmt = '%(asctime)s (%(levelname)s) %(message)s'
+loglvl = logging.DEBUG
+logging.basicConfig(format=logfmt, level=loglvl)
+logger = logging.getLogger(__name__)
 
 # from __future__ import print_function # python2
 
@@ -100,7 +105,7 @@ class DispatchDevice(tornado.web.RequestHandler):
 
 class WebSocketHandler(tornado.websocket.WebSocketHandler):
     def open(self, *args):
-        print("<< WEBSOCKET OPEN")
+        logger.debug("<< WEBSOCKET OPEN")
         # the device expects the server to generate and consistently provide
         #   an API key which equals the UUID format
         # it *must not* be the same apikey which the device uses in its requests
@@ -111,9 +116,9 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         self.stream.set_nodelay(True)
 
     def on_message(self, message):
-        print("<< WEBSOCKET INPUT")
+        logger.debug("<< WEBSOCKET INPUT")
         dct = json.loads(message)
-        print("<< %s" % json.dumps(dct, indent=4))
+        logger.debug("<< %s" % json.dumps(dct, indent=4))
         # if dct.has_key("action"): # python2
         if "action" in dct:     # python3
             print("~~~ device sent action request, ",
@@ -163,10 +168,10 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                 self.setup_completed = True
         # elif dct.has_key("sequence") and dct.has_key("error"): # python2
         elif "sequence" in dct and "error" in dct:
-            print("~~~ device acknowledged our action request (seq %s) ",
-                  "with error code %d" % (dct['sequence'], dct['error']))
+            logger.debug("~~~ device acknowledged our action request (seq {}}) ",
+                         "with error code {}".format(dct['sequence'], dct['error']))
         else:
-            print("## MOEP! Unknown request/answer from device!")
+            logger.warn("## MOEP! Unknown request/answer from device!")
 
         if self.setup_completed and not self.test:
             # switching relais on and off - for fun and profit!
@@ -243,65 +248,73 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             self.test = True
 
         if self.setup_completed and self.test and not self.upgrade:
-            fd = open("static/%s" % upgrade_file_user1, "r")
-            hash_user1 = sha256(fd.read()).hexdigest()
-            fd.close()
-            fd = open("static/%s" % upgrade_file_user2, "r")
-            hash_user2 = sha256(fd.read()).hexdigest()
-            fd.close()
-            data = {
-                "action": "upgrade",
-                "deviceid": dct['deviceid'],
-                "apikey": self.uuid,
-                "userAgent": "app",
-                "sequence": str(int(time() * 1000)),
-                "ts": 0,
-                "params": {
-                    # the device expects two available images, as the original
-                    #   firmware splits the flash into two halfs and flashes
-                    #   the inactive partition (ping-pong).
-                    # as we don't know which partition is (in)active, we
-                    # provide our custom image as user1 as well as user2.
-                    # unfortunately this also means that our firmware image
-                    # must noch exceed FLASH_SIZE / 2 - (bootloader - spiffs)
-                    # TODO: figure out how to build user1 and user2 incl.
-                    #   its necessary differences
-                    # TODO: check whether orig. bootloader can load and boot
-                    #   code bigger than FLASH_SIZE / 2 - (bootloader - spiffs)
-                    # TODO: check if original bootloader can also load v1 images
-                    "binList": [
-                        {
-                            "downloadUrl": "http://%s:8080/ota/%s" %
-                            (args.serving_host, upgrade_file_user1),
-                            # the device expects and checks the sha256 hash of
-                            #   the transmitted file
-                            "digest": hash_user1,
-                            "name": "user1.bin"
-                        },
-                        {
-                            "downloadUrl": "http://%s:8080/ota/%s" %
-                            (args.serving_host, upgrade_file_user2),
-                            # the device expects and checks the sha256 hash of
-                            #   the transmitted file
-                            "digest": hash_user2,
-                            "name": "user2.bin"
-                        }
-                    ],
-                    # if `model` is set to sth. else (I tried) the websocket
-                    #   gets closed in the middle of the JSON transmission
-                    "model": "ITA-GZ1-GL",
-                    # the `version` field doesn't seem to have any effect;
-                    #   nevertheless set it to a ridiculously high number
-                    #   to always be newer than the existing firmware
-                    "version": "23.42.5"
+
+            hash_user1 = self.getFirmwareHash("static/%s" % upgrade_file_user1)
+            hash_user2 = self.getFirmwareHash("static/%s" % upgrade_file_user2)
+
+            if hash_user1 and hash_user2:
+                data = {
+                    "action": "upgrade",
+                    "deviceid": dct['deviceid'],
+                    "apikey": self.uuid,
+                    "userAgent": "app",
+                    "sequence": str(int(time() * 1000)),
+                    "ts": 0,
+                    "params": {
+                        # the device expects two available images, as the original
+                        #   firmware splits the flash into two halfs and flashes
+                        #   the inactive partition (ping-pong).
+                        # as we don't know which partition is (in)active, we
+                        # provide our custom image as user1 as well as user2.
+                        # unfortunately this also means that our firmware image
+                        # must noch exceed FLASH_SIZE / 2 - (bootloader - spiffs)
+                        # TODO: figure out how to build user1 and user2 incl.
+                        #   its necessary differences
+                        # TODO: check whether orig. bootloader can load and boot
+                        #   code bigger than FLASH_SIZE / 2 - (bootloader - spiffs)
+                        # TODO: check if original bootloader can also load v1 images
+                        "binList": [
+                            {
+                                "downloadUrl": "http://%s:8080/ota/%s" %
+                                (args.serving_host, upgrade_file_user1),
+                                # the device expects and checks the sha256 hash of
+                                #   the transmitted file
+                                "digest": hash_user1,
+                                "name": "user1.bin"
+                            },
+                            {
+                                "downloadUrl": "http://%s:8080/ota/%s" %
+                                (args.serving_host, upgrade_file_user2),
+                                # the device expects and checks the sha256 hash of
+                                #   the transmitted file
+                                "digest": hash_user2,
+                                "name": "user2.bin"
+                            }
+                        ],
+                        # if `model` is set to sth. else (I tried) the websocket
+                        #   gets closed in the middle of the JSON transmission
+                        "model": "ITA-GZ1-GL",
+                        # the `version` field doesn't seem to have any effect;
+                        #   nevertheless set it to a ridiculously high number
+                        #   to always be newer than the existing firmware
+                        "version": "23.42.5"
+                    }
                 }
-            }
-            print(">> %s" % json.dumps(data, indent=4))
-            self.write_message(data)
-            self.upgrade = True
+                print(">> %s" % json.dumps(data, indent=4))
+                self.write_message(data)
+                self.upgrade = True
 
     def on_close(self):
-        print("~~ websocket close")
+        logger.debug("~~ websocket close")
+
+    def getFirmwareHash(self, filePath):
+        hash_user = None
+        try:
+            with open(filePath, "r") as user1:
+                hash_user = sha256(user1.read()).hexdigest()
+        except IOError as e:
+            logger.warn(e)
+        return hash_user
 
 
 app = tornado.web.Application([
@@ -316,8 +329,8 @@ app = tornado.web.Application([
     (r'/ota/(.*)', tornado.web.StaticFileHandler, {'path': "static/"})
 ])
 
-if __name__ == '__main__':
 
+def main():
     net_valid = False
     conn_attempt = 0
 
@@ -375,8 +388,8 @@ if __name__ == '__main__':
 
         data = {
             "version": 4,
-            "ssid": "test",
-            "password": "23fnord42",
+            "ssid": args.wifi_ssid or "test",
+            "password": args.wifi_password or "23fnord42",
             "serverName": args.serving_host,
             "port": 4223
         }
@@ -437,3 +450,10 @@ if __name__ == '__main__':
     print("~~ Waiting for device to connect")
 
     tornado.ioloop.IOLoop.instance().start()
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Quitting.")
