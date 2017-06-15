@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with SonOTA.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import logging
 import argparse
 # using tornado as it provides support for websockets
 import tornado.ioloop
@@ -32,6 +32,11 @@ from time import sleep, time
 from uuid import uuid4
 from hashlib import sha256
 from socket import error as socket_error
+
+logfmt = '%(asctime)s (%(levelname)s) %(message)s'
+loglvl = logging.DEBUG
+logging.basicConfig(format=logfmt, level=loglvl)
+logger = logging.getLogger(__name__)
 
 # from __future__ import print_function # python2
 
@@ -100,7 +105,7 @@ class DispatchDevice(tornado.web.RequestHandler):
 
 class WebSocketHandler(tornado.websocket.WebSocketHandler):
     def open(self, *args):
-        print("<< WEBSOCKET OPEN")
+        logger.debug("<< WEBSOCKET OPEN")
         # the device expects the server to generate and consistently provide
         #   an API key which equals the UUID format
         # it *must not* be the same apikey which the device uses in its requests
@@ -301,7 +306,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             self.upgrade = True
 
     def on_close(self):
-        print("~~ websocket close")
+        logger.debug("~~ websocket close")
 
 
 app = tornado.web.Application([
@@ -443,4 +448,4 @@ if __name__ == '__main__':
     try:
         main()
     except (KeyboardInterrupt, SystemExit):
-        print("Quitting.")
+        logger.info("Quitting.")
