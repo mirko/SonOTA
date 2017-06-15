@@ -122,6 +122,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         self.test = False
         self.upgrade = False
         self.stream.set_nodelay(True)
+        self.device_model = "ITA-GZ1-GL"
 
     def on_message(self, message):
         logger.debug("<< WEBSOCKET INPUT")
@@ -132,6 +133,9 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             print("~~~ device sent action request, ",
                   "acknowledging / answering...")
             if dct['action'] == "register":
+                # ITA-GZ1-GL, PSC-B01-GL, etc.
+                if "model" in dct and dct["model"]:
+                    self.device_model = dct["model"]
                 print("~~~~ register")
                 data = {
                     "error": 0,
@@ -177,8 +181,8 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         # elif dct.has_key("sequence") and dct.has_key("error"): # python2
         elif "sequence" in dct and "error" in dct:
             logger.debug(
-                "~~~ device acknowledged our action request (seq {}}) ",
-                         "with error code {}".format(dct['sequence'], dct['error']))
+                "~~~ device acknowledged our action request (seq {}) \
+                with error code {}".format(dct['sequence'], dct['error']))
         else:
             logger.warn("## MOEP! Unknown request/answer from device!")
 
@@ -303,7 +307,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                         ],
                         # if `model` is set to sth. else (I tried) the websocket
                         #   gets closed in the middle of the JSON transmission
-                        "model": "ITA-GZ1-GL",
+                        "model": self.device_model,
                         # the `version` field doesn't seem to have any effect;
                         #   nevertheless set it to a ridiculously high number
                         #   to always be newer than the existing firmware
@@ -320,8 +324,8 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
     def getFirmwareHash(self, filePath):
         hash_user = None
         try:
-            with open(filePath, "r") as user1:
-                hash_user = sha256(user1.read()).hexdigest()
+            with open(filePath, "r") as firmware:
+                hash_user = sha256(firmware.read()).hexdigest()
         except IOError as e:
             logger.warn(e)
         return hash_user
