@@ -375,8 +375,8 @@ if __name__ == '__main__':
 
         data = {
             "version": 4,
-            "ssid": "test",
-            "password": "23fnord42",
+            "ssid": args.wifi_ssid or "test",
+            "password": args.wifi_password or "23fnord42",
             "serverName": args.serving_host,
             "port": 4223
         }
