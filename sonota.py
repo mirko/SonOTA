@@ -388,8 +388,8 @@ def main():
 
         data = {
             "version": 4,
-            "ssid": args.wifi_ssid or "test",
-            "password": args.wifi_password or "23fnord42",
+            "ssid": args.wifi_ssid,
+            "password": args.wifi_password,
             "serverName": args.serving_host,
             "port": 4223
         }
