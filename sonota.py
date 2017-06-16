@@ -87,14 +87,10 @@ if not args.no_check_ip:
 
 class OTAUpdate(tornado.web.StaticFileHandler):
     # Override tornado.web.StaticHandler to debug-print GET request
-    # FIXME: For some reason that fails horribly!
-    #   What did I do wrong trying to override and eventually calling the
-    #   original get method?request!
-
-    def get(self, path, include_body=True):
+    def get(self, path, *args, **kwargs):
         print("<< HTTP GET %s" % self.request.path)
         print(">> %s" % path)
-        super(OTAUpdate, self).get(path, include_body)
+        super(OTAUpdate, self).get(path, *args, **kwargs)
 
 
 class DispatchDevice(tornado.web.RequestHandler):
@@ -353,8 +349,8 @@ def make_app():
         # serving upgrade files via HTTP
         # overriding get method of tornado.web.StaticFileHandler has some weird
         #   side effects - as we don't necessarily need our adjustments use default
-        # (r'/ota/(.*)', OTAUpdate, {'path': "static/"})
-        (r'/ota/(.*)', tornado.web.StaticFileHandler, {'path': "static/"})
+        (r'/ota/(.*)', OTAUpdate, {'path': "static/"})
+        # (r'/ota/(.*)', tornado.web.StaticFileHandler, {'path': "static/"})
     ])
 
 
