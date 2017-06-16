@@ -45,8 +45,10 @@ logger = logging.getLogger(__name__)
 # we can convert the ELF binaries into v2 images with an undocumented
 #   '--version' switch to elf2image using esptool.py, e.g.:
 #     esptool.py elf2image --version 2 /tmp/arduino_build_XXXXXX/sonoff.ino.elf
+default_port = 4223
 upgrade_file_user1 = "image_user1-0x01000.bin"
 upgrade_file_user2 = "image_user2-0x81000.bin"
+
 
 # -----
 
@@ -58,12 +60,18 @@ parser.add_argument("--no-prov", help="Do not provision the device with WiFi cre
  Only use if your device is already configured.", action="store_true")
 parser.add_argument(
     "--wifi-ssid",
-     help="The ESSID of the WiFi network the device should eventually connect to.")
+    help="The ESSID of the WiFi network the device should eventually connect to.")
 parser.add_argument("--wifi-password", help="The password of the WiFi (WPA/WPA2)\
  network the device should eventually connect to.")
 parser.add_argument("--no-check-ip", help="Do not check for correct network settings\
  applied on your interface(s).", action="store_true")
+parser.add_argument("--legacy", action="store_true", help="Enable legacy mode for devices with older firmware "
+                    "(requires root permission)")
 args = parser.parse_args()
+
+
+if args.legacy:     # requires root permission
+    default_port = 443
 
 if args.no_prov and (args.wifi_ssid or args.wifi_password):
     parser.error(
@@ -79,14 +87,10 @@ if not args.no_check_ip:
 
 class OTAUpdate(tornado.web.StaticFileHandler):
     # Override tornado.web.StaticHandler to debug-print GET request
-    # FIXME: For some reason that fails horribly!
-    #   What did I do wrong trying to override and eventually calling the
-    #   original get method?request!
-
-    def get(self, path, include_body=True):
+    def get(self, path, *args, **kwargs):
         print("<< HTTP GET %s" % self.request.path)
         print(">> %s" % path)
-        super(OTAUpdate, self).get(path, include_body)
+        super(OTAUpdate, self).get(path, *args, **kwargs)
 
 
 class DispatchDevice(tornado.web.RequestHandler):
@@ -101,7 +105,7 @@ class DispatchDevice(tornado.web.RequestHandler):
             "error": 0,
             "reason": "ok",
             "IP": args.serving_host,
-            "port": 4223
+            "port": default_port
         }
         print(">> %s" % self.request.path)
         print(">> %s" % json.dumps(data, indent=4))
@@ -122,6 +126,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         self.test = False
         self.upgrade = False
         self.stream.set_nodelay(True)
+        self.device_model = "ITA-GZ1-GL"
 
     def on_message(self, message):
         logger.debug("<< WEBSOCKET INPUT")
@@ -132,6 +137,10 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             print("~~~ device sent action request, ",
                   "acknowledging / answering...")
             if dct['action'] == "register":
+                # ITA-GZ1-GL, PSC-B01-GL, etc.
+                if "model" in dct and dct["model"]:
+                    self.device_model = dct["model"]
+                    logger.info("We are dealing with a {} model.".format(self.device_model))
                 print("~~~~ register")
                 data = {
                     "error": 0,
@@ -177,8 +186,12 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         # elif dct.has_key("sequence") and dct.has_key("error"): # python2
         elif "sequence" in dct and "error" in dct:
             logger.debug(
-                "~~~ device acknowledged our action request (seq {}}) ",
-                         "with error code {}".format(dct['sequence'], dct['error']))
+                "~~~ device acknowledged our action request (seq {}) "
+                "with error code {}".format(
+                    dct['sequence'],
+                    dct['error']
+                )
+            )
         else:
             logger.warn("## MOEP! Unknown request/answer from device!")
 
@@ -303,7 +316,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                         ],
                         # if `model` is set to sth. else (I tried) the websocket
                         #   gets closed in the middle of the JSON transmission
-                        "model": "ITA-GZ1-GL",
+                        "model": self.device_model,
                         # the `version` field doesn't seem to have any effect;
                         #   nevertheless set it to a ridiculously high number
                         #   to always be newer than the existing firmware
@@ -320,27 +333,30 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
     def getFirmwareHash(self, filePath):
         hash_user = None
         try:
-            with open(filePath, "r") as user1:
-                hash_user = sha256(user1.read()).hexdigest()
+            with open(filePath, "rb") as firmware:
+                hash_user = sha256(firmware.read()).hexdigest()
         except IOError as e:
             logger.warn(e)
         return hash_user
 
 
-app = tornado.web.Application([
-    # handling initial dispatch SHTTP POST call to eu-disp.coolkit.cc
-    (r'/dispatch/device', DispatchDevice),
-    # handling actual payload communication on WebSockets
-    (r'/api/ws', WebSocketHandler),
-    # serving upgrade files via HTTP
-    # overriding get method of tornado.web.StaticFileHandler has some weird
-    #   side effects - as we don't necessarily need our adjustments use default
-    # (r'/ota/(.*)', OTAUpdate, {'path': "static/"})
-    (r'/ota/(.*)', tornado.web.StaticFileHandler, {'path': "static/"})
-])
+def make_app():
+    return tornado.web.Application([
+        # handling initial dispatch SHTTP POST call to eu-disp.coolkit.cc
+        (r'/dispatch/device', DispatchDevice),
+        # handling actual payload communication on WebSockets
+        (r'/api/ws', WebSocketHandler),
+        # serving upgrade files via HTTP
+        # overriding get method of tornado.web.StaticFileHandler has some weird
+        #   side effects - as we don't necessarily need our adjustments use default
+        (r'/ota/(.*)', OTAUpdate, {'path': "static/"})
+        # (r'/ota/(.*)', tornado.web.StaticFileHandler, {'path': "static/"})
+    ])
 
 
 def main():
+    app = make_app()
+
     net_valid = False
     conn_attempt = 0
 
@@ -372,8 +388,8 @@ def main():
                         if conn_attempt == 1:
                             print(
                                 "** No ip address of the ITEAD DHCP range (10.10.7.0/24)",
-                                  "is assigned to any of your interfaces,",
-                                  "which means you don't appear to be connected to the IEAD WiFi network.")
+                                "is assigned to any of your interfaces,",
+                                "which means you don't appear to be connected to the IEAD WiFi network.")
                             print(
                                 "** Please change into the ITEAD WiFi network (ITEAD-100001XXXX)")
                             print("** This application can be kept running.")
@@ -405,7 +421,7 @@ def main():
             "ssid": args.wifi_ssid,
             "password": args.wifi_password,
             "serverName": args.serving_host,
-            "port": 4223
+            "port": default_port
         }
         print(">> HTTP POST /10.10.7.1/ap")
         print(">> %s", json.dumps(data, indent=4))
@@ -444,10 +460,10 @@ def main():
                     if conn_attempt == 1:
                         print(
                             "** The IP address of <serve_host> (%s) is not " % args.serving_host,
-                              "assigned to any interface on this machine.")
+                            "assigned to any interface on this machine.")
                         print(
                             "** Please change WiFi network to $ESSID and make ",
-                              "sure %s is being assigned to your WiFi interface.")
+                            "sure %s is being assigned to your WiFi interface.")
                         print("** This application can be kept running.")
                     sleep(2)
                     print(".", end="", flush=True)
@@ -457,14 +473,20 @@ def main():
 
     print("~~ Starting web server")
 
+    if args.legacy:
+        old = make_app()
+        # listening on port 8081 for serving upgrade files for older devices
+        old.listen(8081)
+
     # listening on port 8080 for serving upgrade files
     app.listen(8080)
+
     app_ssl = tornado.httpserver.HTTPServer(app, ssl_options={
         "certfile": "ssl/server.crt",
         "keyfile": "ssl/server.key",
     })
     # listening on port 443 to catch initial POST request to eu-disp.coolkit.cc
-    app_ssl.listen(4223)
+    app_ssl.listen(default_port)
 
     print("~~ Waiting for device to connect")
 
