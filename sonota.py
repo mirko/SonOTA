@@ -333,7 +333,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
     def getFirmwareHash(self, filePath):
         hash_user = None
         try:
-            with open(filePath, "r") as firmware:
+            with open(filePath, "rb") as firmware:
                 hash_user = sha256(firmware.read()).hexdigest()
         except IOError as e:
             logger.warn(e)
