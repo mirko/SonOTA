@@ -45,8 +45,10 @@ logger = logging.getLogger(__name__)
 # we can convert the ELF binaries into v2 images with an undocumented
 #   '--version' switch to elf2image using esptool.py, e.g.:
 #     esptool.py elf2image --version 2 /tmp/arduino_build_XXXXXX/sonoff.ino.elf
+default_port = 4223
 upgrade_file_user1 = "image_user1-0x01000.bin"
 upgrade_file_user2 = "image_user2-0x81000.bin"
+
 
 # -----
 
@@ -63,7 +65,13 @@ parser.add_argument("--wifi-password", help="The password of the WiFi (WPA/WPA2)
  network the device should eventually connect to.")
 parser.add_argument("--no-check-ip", help="Do not check for correct network settings\
  applied on your interface(s).", action="store_true")
+parser.add_argument("--legacy", action="store_true", help="Enable legacy mode for devices with older firmware "
+                    "(requires root permission)")
 args = parser.parse_args()
+
+
+if args.legacy:     # requires root permission
+    default_port = 443
 
 if args.no_prov and (args.wifi_ssid or args.wifi_password):
     parser.error(
@@ -101,7 +109,7 @@ class DispatchDevice(tornado.web.RequestHandler):
             "error": 0,
             "reason": "ok",
             "IP": args.serving_host,
-            "port": 443
+            "port": default_port
         }
         print(">> %s" % self.request.path)
         print(">> %s" % json.dumps(data, indent=4))
@@ -352,7 +360,7 @@ def make_app():
 
 def main():
     app = make_app()
-    old = make_app()
+
     net_valid = False
     conn_attempt = 0
 
@@ -417,7 +425,7 @@ def main():
             "ssid": args.wifi_ssid,
             "password": args.wifi_password,
             "serverName": args.serving_host,
-            "port": 443
+            "port": default_port
         }
         print(">> HTTP POST /10.10.7.1/ap")
         print(">> %s", json.dumps(data, indent=4))
@@ -469,8 +477,11 @@ def main():
 
     print("~~ Starting web server")
 
-    # listening on port 8081 for serving upgrade files for older devices
-    old.listen(8081)
+    if args.legacy:
+        old = make_app()
+        # listening on port 8081 for serving upgrade files for older devices
+        old.listen(8081)
+
     # listening on port 8080 for serving upgrade files
     app.listen(8080)
 
@@ -479,7 +490,7 @@ def main():
         "keyfile": "ssl/server.key",
     })
     # listening on port 443 to catch initial POST request to eu-disp.coolkit.cc
-    app_ssl.listen(443)
+    app_ssl.listen(default_port)
 
     print("~~ Waiting for device to connect")
 
