@@ -101,7 +101,7 @@ class DispatchDevice(tornado.web.RequestHandler):
             "error": 0,
             "reason": "ok",
             "IP": args.serving_host,
-            "port": 4223
+            "port": 443
         }
         print(">> %s" % self.request.path)
         print(">> %s" % json.dumps(data, indent=4))
@@ -136,6 +136,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                 # ITA-GZ1-GL, PSC-B01-GL, etc.
                 if "model" in dct and dct["model"]:
                     self.device_model = dct["model"]
+                    logger.info("We are dealing with a {} model.".format(self.device_model))
                 print("~~~~ register")
                 data = {
                     "error": 0,
@@ -351,6 +352,7 @@ def make_app():
 
 def main():
     app = make_app()
+    old = make_app()
     net_valid = False
     conn_attempt = 0
 
@@ -415,7 +417,7 @@ def main():
             "ssid": args.wifi_ssid,
             "password": args.wifi_password,
             "serverName": args.serving_host,
-            "port": 4223
+            "port": 443
         }
         print(">> HTTP POST /10.10.7.1/ap")
         print(">> %s", json.dumps(data, indent=4))
@@ -467,14 +469,17 @@ def main():
 
     print("~~ Starting web server")
 
+    # listening on port 8081 for serving upgrade files for older devices
+    old.listen(8081)
     # listening on port 8080 for serving upgrade files
     app.listen(8080)
+
     app_ssl = tornado.httpserver.HTTPServer(app, ssl_options={
         "certfile": "ssl/server.crt",
         "keyfile": "ssl/server.key",
     })
     # listening on port 443 to catch initial POST request to eu-disp.coolkit.cc
-    app_ssl.listen(4223)
+    app_ssl.listen(443)
 
     print("~~ Waiting for device to connect")
 
