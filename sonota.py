@@ -349,8 +349,8 @@ def make_app():
         # serving upgrade files via HTTP
         # overriding get method of tornado.web.StaticFileHandler has some weird
         #   side effects - as we don't necessarily need our adjustments use default
-        (r'/ota/(.*)', OTAUpdate, {'path': "static/"})
-        # (r'/ota/(.*)', tornado.web.StaticFileHandler, {'path': "static/"})
+        # (r'/ota/(.*)', OTAUpdate, {'path': "static/"})
+        (r'/ota/(.*)', tornado.web.StaticFileHandler, {'path': "static/"})
     ])
 
 
