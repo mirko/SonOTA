@@ -20,6 +20,7 @@ The script is fairly well documented (I think) - apart from that above stated li
 ~~Adjust IP address and make sure variable `serving_host` in `sonota.py` is set to the same.~~
 
 No DNS redirect is needed anymore with version 2 as the script can now also provision the Sonoff device and hence specify the `serving_host`.
+Just connect to the WiFi network which the Sonoff devices open called "ITEAD-XXXXXX" -- password is "12345678" and run the script.
 
 #### Creation of SSL certificates
 
@@ -52,10 +53,14 @@ No DNS redirect is needed anymore with version 2 as the script can now also prov
 
 ~~The script needs to be run as root, as it binds to port 443 to which the Sonoff device initially sets up a HTTPS POST request.~~
 
-The script can now be run as a regular user; as we are doing the provisioning now, we can also set the port to anything other than 443.
+The script can now be run as a regular user; as *we* can do the provisioning now, we can also set the port to anything other than 443.
 
 `python3 sonota.py --wifi-ssid foobar --wifi-password ew4Ookie 10.23.42.5`
 
 #### Issues
 
-As we don't override the bootloader which still expects v2 images and our custom firmware might end up in the user2 partition, vanilla Arduino OTA functionality - if provided by your custom image - will *not* work.
+~~As we don't override the bootloader which still expects v2 images and our custom firmware might end up in the user2 partition, vanilla Arduino OTA functionality - if provided by your custom image - will *not* work.~~
+
+Due to the impressive work of @khcnz there's now a sketch for intermediate images: https://github.com/khcnz/Espressif2Arduino
+Espressif2Arduino provides the correct linker scripts for ESP8266 and ESP8285 chips (user1 and user2) and -- once flashed and booted -- replaces the Espressif bootloader by the Arduino one.
+From there it will attempt to download and flash and *un*modified Arduino image (e.g. a https://github.com/arendst/Sonoff-Tasmota one) from your local webserver via the Arduino OTA method.
