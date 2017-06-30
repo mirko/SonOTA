@@ -413,7 +413,7 @@ def main():
                 print(e)
                 continue
 
-        dct = json.loads(cont)
+        dct = json.loads(cont.decode('utf-8'))
         print("<< %s" % json.dumps(dct, indent=4))
 
         data = {
@@ -427,7 +427,7 @@ def main():
         print(">> %s", json.dumps(data, indent=4))
         resp, cont = http.request(
             "http://10.10.7.1/ap", "POST", json.dumps(data))
-        dct = json.loads(cont)
+        dct = json.loads(cont.decode('utf-8'))
         print("<< %s" % json.dumps(dct, indent=4))
 
         print("~~ Provisioning completed")
