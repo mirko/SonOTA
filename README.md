@@ -2,8 +2,8 @@
 
 ## Updating a new Sonoff device
 
-The latest updates include binary files so you can update your Sonoff device
-from start to finish without having to build anything.
+The latest updates include binary files (thanks to the great work by https://github.com/khcnz/Espressif2Arduino) so you can update your Sonoff device
+from start to finish without having to build anything. 
 
 The included final Arduino Sketch binary is https://github.com/arendst/Sonoff-Tasmota (v5.5.2, the only change is defaulting to AP mode rather than WPS when unconfigured).
 
