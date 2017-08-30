@@ -9,7 +9,7 @@ The included final Arduino Sketch binary is https://github.com/arendst/Sonoff-Ta
 
 ### Running
 
-To run, firstly download the repo (either using `git clone`, or downloading the .zip file). You must run Python 3.5 (later should work, but untested), and the python dependencies. To install the dependencies, change into the SonOTA directory and run:
+To run, firstly download the repo (either using `git clone`, or downloading the .zip file). You must run Python 3.5 (later should work, but untested, v3.5 is recommended for Windows as the `netifaces` module has prebuilt wheels), and the python dependencies. To install the dependencies, change into the SonOTA directory and run:
 `pip3 install --user -r requirements.txt`
 
 Once installed, you can run SonOTA (`./sonota.py`, you may need something like `python3 sonota.py` on Windows), and it will prompt you for the various settings it needs, and guide you through what to do for each step.
