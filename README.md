@@ -58,4 +58,11 @@ The following devices have been known to work. If you were successful, please le
 |---------|-----------------------|---------------|
 |Sonoff Basic   | v1.5.5 | sillyfrog |
 |Sonoff Dual | v1.1.0 | sillyfrog |
-|Sonoff S20 | v1.5.5 (v1.5.2 did *not* work [#4](https://github.com/sillyfrog/SonOTA/issues/4)) | simonszu |
+|Sonoff S20 | v1.5.5 (v1.5.2 did *not* work) | simonszu |
+|Sonoff TH | v2.0.4 (v2.0.1 did *not* work) | sillyfrog |
+
+# Reporting issues
+
+If you are having an issue runinng this, please include the following information:
+ - The full output of the actual run (remember to remove your WiFi password)
+ - The model and version of your Sonoff device
