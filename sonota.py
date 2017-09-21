@@ -420,6 +420,7 @@ def checkargs():
         print("Select IP address of the WiFi interface:")
         for ip in ips:
             print("    {}: {}".format(i, ip))
+            i += 1
         selection = input('Select IP address [0]: ').strip()
         if selection == '':
             args.serving_host = ips[0]
