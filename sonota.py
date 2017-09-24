@@ -64,7 +64,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--serving-host", help="The host's ip address which will handle the HTTP(S)/WebSocket requests initiated by the device.\
  Normally the ip address of the WiFi interface of the machine this script is running on.")
 parser.add_argument("--no-prov", help="Do not provision the device with WiFi credentials.\
- Only use if your device is already configured (Not recommended).", action="store_true")
+ Only use if your device is already configured (Not recommended, but useful if doing DNS spoofing).",
+ action="store_true")
 parser.add_argument(
     "--wifi-ssid",
     help="The ESSID of the WiFi network the device should eventually connect to.")
