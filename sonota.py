@@ -59,6 +59,9 @@ arduino_file = "image_arduino.bin"
 
 # -----
 
+# A horrible hack to track what has been downloaded in tornado so we don't
+# exit early
+seenurlpaths = []
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--serving-host", help="The host's ip address which will handle the HTTP(S)/WebSocket requests initiated by the device.\
@@ -89,12 +92,12 @@ if (args.wifi_ssid or args.wifi_password) and not (args.wifi_ssid and args.wifi_
         "arguments --wifi-ssid and --wifi-password must always occur together")
 
 class OTAUpdate(tornado.web.StaticFileHandler):
-    # Override tornado.web.StaticHandler to debug-print GET request
-    def get(self, path, *args, **kwargs):
-        print("<< HTTP GET %s" % self.request.path)
-        print(">> %s" % path)
-        super(OTAUpdate, self).get(path, *args, **kwargs)
-
+    def should_return_304(self):
+        """Used as a hook to get the retrived URL's, never allow caching.
+        """
+        print("Sending file: %s" % self.request.path)
+        seenurlpaths.append(str(self.request.path))
+        return False
 
 class DispatchDevice(tornado.web.RequestHandler):
 
@@ -350,10 +353,8 @@ def make_app():
         # handling actual payload communication on WebSockets
         (r'/api/ws', WebSocketHandler),
         # serving upgrade files via HTTP
-        # overriding get method of tornado.web.StaticFileHandler has some weird
-        #   side effects - as we don't necessarily need our adjustments use default
-        # (r'/ota/(.*)', OTAUpdate, {'path': "static/"})
-        (r'/ota/(.*)', tornado.web.StaticFileHandler, {'path': "static/"})
+        (r'/ota/(.*)', OTAUpdate, {'path': "static/"})
+        #(r'/ota/(.*)', tornado.web.StaticFileHandler, {'path': "static/"})
     ])
 
 def defaultinterface():
@@ -414,6 +415,11 @@ def checkargs():
             print("Binary file appears too small!", fn)
             sys.exit(1)
 
+    if args.no_prov:
+        # No further config is needed as things are already configured
+        args.no_check_ip = True
+        return
+
     # Get the serving IP
     while not args.serving_host:
         ips = ip4ips()
@@ -447,7 +453,8 @@ def checkargs():
         print('It looks like you are already on a Sonoff/Final stage WiFi '\
             'network, please change to your normal WiFi network. If this '\
             'has already been done, you may need to modify the IP range of '\
-            'your LAN to use this tool safely.')
+            'your LAN to use this tool safely. If this is what you intended '\
+            'run again with --no-prov to skip this step.')
         sys.exit(1)
 
     # Check there is a WiFi config
@@ -466,65 +473,64 @@ def stage1():
     net_valid = False
     conn_attempt = 0
 
-    if not args.no_prov:
-        if not args.no_check_ip:
-            conn_attempt = 0
-            # fuzzy-check if machine is connected to ITEAD AP
-            while True:
-                conn_attempt += 1
-                if hasfinalstageip():
-                    print("Appear to have connected to the final stage IP, "\
-                        "moving to next stage.")
-                    return
-                if hassonoffip():
-                    break
-                else:
-                    if conn_attempt == 1:
-                        print("** Now connect via WiFi to your Sonoff device.")
-                        print("** Please change into the ITEAD WiFi",
-                            "network (ITEAD-100001XXXX). The default password",
-                            "is 12345678.")
-                        print("To reset the Sonoff to defaults, press",
-                            "the button for 7 seconds and the light will",
-                            "start flashing rapidly.")
-                        print("** This application should be kept running",
-                            "and will wait until connected to the Sonoff...")
-                    sleep(2)
-                    print(".", end="", flush=True)
-                    continue
-
-        http = Http(timeout=2)
-
-        print("~~ Connection attempt")
+    if not args.no_check_ip:
         conn_attempt = 0
+        # fuzzy-check if machine is connected to ITEAD AP
         while True:
             conn_attempt += 1
-            print(">> HTTP GET /10.10.7.1/device")
-            try:
-                resp, cont = http.request("http://10.10.7.1/device", "GET")
+            if hasfinalstageip():
+                print("Appear to have connected to the final stage IP, "\
+                    "moving to next stage.")
+                return
+            if hassonoffip():
                 break
-            except socket_error as e:
-                print(e)
+            else:
+                if conn_attempt == 1:
+                    print("** Now connect via WiFi to your Sonoff device.")
+                    print("** Please change into the ITEAD WiFi",
+                        "network (ITEAD-100001XXXX). The default password",
+                        "is 12345678.")
+                    print("To reset the Sonoff to defaults, press",
+                        "the button for 7 seconds and the light will",
+                        "start flashing rapidly.")
+                    print("** This application should be kept running",
+                        "and will wait until connected to the Sonoff...")
+                sleep(2)
+                print(".", end="", flush=True)
                 continue
 
-        dct = json.loads(cont.decode('utf-8'))
-        print("<< %s" % json.dumps(dct, indent=4))
+    http = Http(timeout=2)
 
-        data = {
-            "version": 4,
-            "ssid": args.wifi_ssid,
-            "password": args.wifi_password,
-            "serverName": args.serving_host,
-            "port": DEFAULT_PORT_HTTPS
-        }
-        print(">> HTTP POST /10.10.7.1/ap")
-        print(">> %s", json.dumps(data, indent=4))
-        resp, cont = http.request(
-            "http://10.10.7.1/ap", "POST", json.dumps(data))
-        dct = json.loads(cont.decode('utf-8'))
-        print("<< %s" % json.dumps(dct, indent=4))
+    print("~~ Connection attempt")
+    conn_attempt = 0
+    while True:
+        conn_attempt += 1
+        print(">> HTTP GET /10.10.7.1/device")
+        try:
+            resp, cont = http.request("http://10.10.7.1/device", "GET")
+            break
+        except socket_error as e:
+            print(e)
+            continue
 
-        print("~~ Provisioning completed")
+    dct = json.loads(cont.decode('utf-8'))
+    print("<< %s" % json.dumps(dct, indent=4))
+
+    data = {
+        "version": 4,
+        "ssid": args.wifi_ssid,
+        "password": args.wifi_password,
+        "serverName": args.serving_host,
+        "port": DEFAULT_PORT_HTTPS
+    }
+    print(">> HTTP POST /10.10.7.1/ap")
+    print(">> %s", json.dumps(data, indent=4))
+    resp, cont = http.request(
+        "http://10.10.7.1/ap", "POST", json.dumps(data))
+    dct = json.loads(cont.decode('utf-8'))
+    print("<< %s" % json.dumps(dct, indent=4))
+
+    print("~~ Provisioning completed")
 
 def stage2():
     print("Starting stage2...")
@@ -607,23 +613,42 @@ def stage3():
                 sleep(2)
                 print(".", end="", flush=True)
 
+    count = 0
     while True:
         if not hasfinalstageip():
-            break
-        print()
-        print()
-        print()
-        print('The "FinalStage" SSID will disappear when the device has been',
-            'fully flashed and image_arduino.bin has been installed')
-        print('Once "FinalStage" has gone away, you can stop this program')
-        sleep(30)
+            if '/ota/image_arduino.bin' in seenurlpaths:
+                # The arduino image has been downloaded, exit
+                break
+            else:
+                print()
+                print()
+                print('It appears we have been disconnected from the',
+                    '"FinalStage" SSID, however the final image has not been',
+                    'downloaded. Reconnect to "FinalStage" when it returns to',
+                    'continue the process (this may require a power cycle of',
+                    'your Sonoff device)...')
+                print()
+                while not hasfinalstageip():
+                    print(".", end="", flush=True)
+                    sleep(2)
+
+        if count % 10 == 0:
+            print()
+            print()
+            print('The "FinalStage" SSID will disappear when the device has been',
+                'fully flashed and image_arduino.bin has been installed')
+            print('Once "FinalStage" has gone away, you can stop this program')
+        count += 1
+        sleep(2)
+        print(".", end="", flush=True)
 
     print('No longer on "FinalStage" SSID, all done!')
     _thread.interrupt_main()
 
 def main():
     checkargs()
-    stage1()
+    if not args.no_prov:
+        stage1()
     stage2()
 
 if __name__ == '__main__':
