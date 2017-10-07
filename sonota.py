@@ -586,32 +586,23 @@ def stage2():
 
 def stage3():
     '''This is just a thread to provide feedback to the user.'''
-    net_valid = False
-    while not net_valid:
-        print()
-        print()
-        print("*** IMPORTANT! ***")
-        print("** AFTER the first download is COMPLETE, with in a minute or so",
-            'you should connect to the new SSID "FinalStage" to finish the process.')
-        print('** ONLY disconnect when the new "FinalStage" SSID is visible',
-            'as an available WiFi network.')
-        print('This server should automatically be allocated the IP address:',
-            '192.168.4.2.')
-        print('If you have successfully connected to "FinalStage" and this is',
-            'not the IP Address you were allocated, please ensure no other',
-            'device has connected, and reboot your Sonoff.')
-
-        count = 0
-        while True:
-            count += 1
-            if count > 10:
-                break
-            if hasfinalstageip():
-                net_valid = True
-                break
-            else:
-                sleep(2)
-                print(".", end="", flush=True)
+    count = 0
+    while not hasfinalstageip():
+        if count % 30 == 0:
+            print()
+            print("*** IMPORTANT! ***")
+            print("** AFTER the first download is COMPLETE, with in a minute or so",
+                'you should connect to the new SSID "FinalStage" to finish the process.')
+            print('** ONLY disconnect when the new "FinalStage" SSID is visible',
+                'as an available WiFi network.')
+            print('This server should automatically be allocated the IP address:',
+                '192.168.4.2.')
+            print('If you have successfully connected to "FinalStage" and this is',
+                'not the IP Address you were allocated, please ensure no other',
+                'device has connected, and reboot your Sonoff.')
+        count += 1
+        sleep(2)
+        print(".", end="", flush=True)
 
     count = 0
     while True:
@@ -632,7 +623,7 @@ def stage3():
                     print(".", end="", flush=True)
                     sleep(2)
 
-        if count % 10 == 0:
+        if count % 30 == 0:
             print()
             print()
             print('The "FinalStage" SSID will disappear when the device has been',
