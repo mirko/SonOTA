@@ -14,6 +14,8 @@ To run, firstly download the repo (either using `git clone`, or downloading the 
 
 Once installed, you can run SonOTA (`./sonota.py`, you may need something like `python3 sonota.py` on Windows), and it will prompt you for the various settings it needs, and guide you through what to do for each step.
 
+**Ensure all firewalls are disabled on all WiFi networks, including FinalStage when connected.** This is the most common reason things to not complete.
+
 ### Update Steps
 
 The update will go as follows (assuming a stock Sonoff device, the included .bin files have been tested with a Sonoff Basic and a Sonoff Dual). The program will prompt you what to do for each step as required.
