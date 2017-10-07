@@ -16,6 +16,8 @@ Once installed, you can run SonOTA (`./sonota.py`, you may need something like `
 
 **Ensure all firewalls are disabled on all WiFi networks, including FinalStage when connected.** This is the most common reason things to not complete.
 
+Once complete and Sonoff-Tasmota is installed, you will have a new SSID available of `sonoff-####`, connect to this and configure for your network.
+
 ### Update Steps
 
 The update will go as follows (assuming a stock Sonoff device, the included .bin files have been tested with a Sonoff Basic and a Sonoff Dual). The program will prompt you what to do for each step as required.
