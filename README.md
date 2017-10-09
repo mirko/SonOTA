@@ -1,5 +1,3 @@
-# With the move to DOUT, the `image_user*` images need to be updated, they have been moved sideways for the moment to prevent issues until this is fixed.
-
 # SonOTA
 
 ## Updating a new Sonoff device
