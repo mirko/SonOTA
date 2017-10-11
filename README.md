@@ -5,7 +5,7 @@
 The latest updates include binary files (thanks to the great work by https://github.com/khcnz/Espressif2Arduino) so you can update your Sonoff device
 from start to finish without having to build anything. 
 
-The included final Arduino Sketch binary is https://github.com/arendst/Sonoff-Tasmota (v5.5.2, the only change is defaulting to AP mode rather than WPS when unconfigured).
+The included final Arduino Sketch binary is v5.8.0 from the Sonoff-Tasmota releases page: https://github.com/arendst/Sonoff-Tasmota/releases
 
 ### Running
 
@@ -16,7 +16,7 @@ Once installed, you can run SonOTA (`./sonota.py`, you may need something like `
 
 **Ensure all firewalls are disabled on all WiFi networks, including FinalStage when connected.** This is the most common reason things to not complete.
 
-Once complete and Sonoff-Tasmota is installed, you will have a new SSID available of `sonoff-####`, connect to this and configure for your network.
+Once complete and Sonoff-Tasmota is installed, when the LED starts flashing, you can enable AP mode by pressing the button 4 times (and waiting for a reboot, and the LED to start flashing again, it will then broadcast an AP `sonoff-###`). For more information see the [Sonoff-Tasmota Initial Config](https://github.com/arendst/Sonoff-Tasmota/wiki/Initial-Configuration) and [Button Functionality](https://github.com/arendst/Sonoff-Tasmota/wiki/Button-usage).
 
 ### Update Steps
 
@@ -26,7 +26,7 @@ The update will go as follows (assuming a stock Sonoff device, the included .bin
 2. Connect to the `ITEAD-*` WiFi network, you may need to reset your Sonoff to defaults to do this. This stage tells the Sonoff where to get future updates.
 3. Typically, you will be disconnected automatically from the `ITEAD-*` WiFi network, and your PC will reconnect to your normal network. So this stage will require no intervention, and the Sonoff will connect to your PC to download the required firmware.
 4. Once the firmware has been downloaded, there will be a new `FinalStage` SSID that you can connect to. Do this, and the device will then download the final stages of the firmware, including the Arduino image, replacing the default boot loader.
-5. That's it! You should be all done and ready to use your new Arduino Firmware.
+5. That's it! You should be all done and ready to use your new Arduino Firmware (see the [Running](#running) section).
 
 ### Important Files
 
@@ -38,9 +38,15 @@ The `static/` directory includes 3 binary files, these are:
 
 The `ssl/` directory has some pregenerated SSL certificates. As the Sonoff does not verify the SSL certificates, these offer no real security, so to make things easy, they have been included in the repo.
 
+### Updating the included Sonoff-Tasmota
+
+If a new release of Sonoff-Tasmota is available and you wish to use it, download the binary from the [Sonoff-Tasmota Releases](https://github.com/arendst/Sonoff-Tasmota/releases) page, and copy it to `static/image_arduino.bin`, replacing the existing file.
+
+This same process can be used if you have your own build with, for example, default settings for your network.
+
 ### Changing Firmware
 
-If you decide that Sonoff-Tasmota is not for you, it has an easy to use feature to allow uploading of new firmware.
+If you have flashed your Snoff and decide that Sonoff-Tasmota is not for you, it has an easy to use feature to allow uploading of new firmware.
 
 If you connect to the web interface of the device (either normally, or in AP mode), then change the URL path to be `/up`, you can browse to a local binary file on your computer, and upload. Be sure to use something that you have tested as if this goes bad, you'll need to open up your Sonoff and update using the old serial method.
 
