@@ -8,18 +8,18 @@ The options used for the build (after doing the setup as per https://github.com/
 - Board: Generic ESP8266 Module
 - Flash Size: "1M (Espressif OTA Rom 1)"
 
-Then I ran the following to get `Espressif2Arduino.ino-0x01000.bin`: 
+Then I ran the following to get `Espressif2Arduino.ino-0x01000.bin`:
 
 ```
-esptool.py elf2image --flash_mode=dout --version 2 Espressif2Arduino.ino.elf
+esptool.py elf2image --flash_freq=20m --flash_mode=dout --version 2 Espressif2Arduino.ino.elf
 ```
 
 I then did a build again in Arduino with the option:
 
-- Flash Size: "1M (Espressif OTA Rom 2)”
+- Flash Size: "1M (Espressif OTA Rom 2)"
 
-And finally to get `Espressif2Arduino.ino-0x81000.bin`: 
+And finally to get `Espressif2Arduino.ino-0x81000.bin`:
 
 ```
-esptool.py elf2image --flash_mode=dout --version 2 Espressif2Arduino.ino.elf
-``` 
+esptool.py elf2image --flash_freq=20m --flash_mode=dout --version 2 Espressif2Arduino.ino.elf
+```
