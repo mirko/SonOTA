@@ -46,7 +46,7 @@ This same process can be used if you have your own build with, for example, defa
 
 ### Changing Firmware
 
-If you have flashed your Snoff and decide that Sonoff-Tasmota is not for you, it has an easy to use feature to allow uploading of new firmware.
+If you have flashed your Sonoff and decide that Sonoff-Tasmota is not for you, it has an easy to use feature to allow uploading of new firmware.
 
 If you connect to the web interface of the device (either normally, or in AP mode), then change the URL path to be `/up`, you can browse to a local binary file on your computer, and upload. Be sure to use something that you have tested as if this goes bad, you'll need to open up your Sonoff and update using the old serial method.
 
