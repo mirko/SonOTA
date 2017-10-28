@@ -35,7 +35,11 @@ Once installed, you can run SonOTA (`./sonota.py`, you may need something like `
 
 **Ensure all firewalls are disabled on all WiFi networks, including FinalStage when connected.** This is the most common reason things to not complete.
 
-Once complete and Sonoff-Tasmota is installed, when the LED starts flashing, you can enable AP mode by pressing the button 4 times (and waiting for a reboot, and the LED to start flashing again, it will then broadcast an AP `sonoff-###`). For more information see the [Sonoff-Tasmota Initial Config](https://github.com/arendst/Sonoff-Tasmota/wiki/Initial-Configuration) and [Button Functionality](https://github.com/arendst/Sonoff-Tasmota/wiki/Button-usage).
+Once complete and Sonoff-Tasmota is installed, when the LED starts flashing, you can enable AP mode by pressing the button 4 times (and waiting for a reboot, and the LED to start flashing again, it will then broadcast an AP `sonoff-###`). Alternatively you can set up a temporary AP and the Sonoff will connect to that automatically using these details: 
+ * SSID: `indebuurt1`
+ * Password: `VnsqrtnrsddbrN`
+ 
+For more information see the [Sonoff-Tasmota Initial Config](https://github.com/arendst/Sonoff-Tasmota/wiki/Initial-Configuration) and [Button Functionality](https://github.com/arendst/Sonoff-Tasmota/wiki/Button-usage).
 
 ### Update Steps
 
