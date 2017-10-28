@@ -7,9 +7,28 @@ from start to finish without having to build anything.
 
 The included final Arduino Sketch binary is v5.8.0 from the Sonoff-Tasmota releases page: https://github.com/arendst/Sonoff-Tasmota/releases
 
+
+### Prerequisites
+
+**Windows users:**
+* Download and install Python v3.5.x: https://www.python.org/downloads/windows/
+  (Python v3.5.x is recommended for Windows as the `netifaces` module has prebuilt wheels)
+* All firewalls must be disabled when running SonOTA
+
+**Linux users:**
+* Download and install `python3`, `python3-pip` and `python3-dev` packages (Python v3.5 or later is required)
+* Update `pip` by running: `python3 -m pip install --upgrade pip` (see #22 for more information)
+* All firewalls must be disabled when running SonOTA
+
+**Mac users:**
+* Downloaded and install the latest Python 3 for Mac: https://www.python.org/downloads/
+* Install the clang developer tools if prompted during the `pip` install phase
+* All firewalls must be disabled when running SonOTA
+
+
 ### Running
 
-To run, firstly download the repo (either using `git clone`, or downloading the .zip file). You must run Python 3.5 (later should work, but untested, v3.5.x is recommended for Windows as the `netifaces` module has prebuilt wheels, also update pip with `python3 -m pip install --upgrade pip`, see #22), and the python dependencies. To install the dependencies, change into the SonOTA directory and run:
+After setting up the prerequisites, download the repo (either using `git clone`, or downloading and extracting the .zip file). Then install the Python dependencies by changing into the SonOTA directory and running:
 `pip3 install --user -r requirements.txt`
 
 Once installed, you can run SonOTA (`./sonota.py`, you may need something like `python3 sonota.py` on Windows), and it will prompt you for the various settings it needs, and guide you through what to do for each step.
@@ -69,3 +88,4 @@ Please see the [wiki](https://github.com/mirko/SonOTA/wiki) for known working co
 If you are having an issue runinng this, please include the following information:
  - The full output of the actual run (remember to remove your WiFi password)
  - The model and version of your Sonoff device
+
