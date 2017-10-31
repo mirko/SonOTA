@@ -18,32 +18,26 @@
 # You should have received a copy of the GNU General Public License
 # along with SonOTA.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
 import argparse
-# using tornado as it provides support for websockets
-import tornado.ioloop
-import tornado.web
-import tornado.httpserver
-import tornado.websocket
 import json
-from httplib2 import Http
-from datetime import datetime
-from time import sleep, time
-from uuid import uuid4
-from hashlib import sha256
-from socket import error as socket_error
+import logging
 import os
 import sys
 import threading
-import netifaces
 import _thread
+from datetime import datetime
+from hashlib import sha256
+from httplib2 import Http
+from socket import error as socket_error
+from time import sleep, time
+from uuid import uuid4
 
-logfmt = '%(asctime)s (%(levelname)s) %(message)s'
-loglvl = logging.DEBUG
-logging.basicConfig(format=logfmt, level=loglvl)
-logger = logging.getLogger(__name__)
-
-# from __future__ import print_function # python2
+import netifaces
+# using tornado as it provides support for websockets
+import tornado.httpserver
+import tornado.ioloop
+import tornado.web
+import tornado.websocket
 
 # the original bootloader expects so called v2 images which start with the
 #   magic byte 0xEA instead of the Arduino ones (v1) starting with 0xE9
@@ -56,6 +50,36 @@ upgrade_file_user1 = "image_user1-0x01000.bin"
 upgrade_file_user2 = "image_user2-0x81000.bin"
 arduino_file = "image_arduino.bin"
 
+
+rootlog = logging.getLogger()
+rootlog.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(logging.Formatter('%(message)s'))
+rootlog.addHandler(ch)
+ch = logging.FileHandler('debug_%d.log' % (time(),))
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(logging.Formatter('%(asctime)s: %(levelname)s: %(message)s'))
+rootlog.addHandler(ch)
+
+log = logging.getLogger(__name__)
+
+def logmulti(msg):
+    '''Log multi lines and try and strip out WiFi passwords'''
+    for l in msg.split('\n'):
+        if l.strip():
+            log.debug(l)
+
+def logjson(data, outbound=True):
+    if outbound:
+        direction = '>>'
+    else:
+        direction = '<<'
+    if 'password' in data:
+        # Don't update original dict
+        data = dict(data)
+        data['password'] = '*' * len(data['password'])
+    logmulti("{} {}".format(direction, json.dumps(data, indent=4)))
 
 # -----
 
@@ -95,7 +119,7 @@ class OTAUpdate(tornado.web.StaticFileHandler):
     def should_return_304(self):
         """Used as a hook to get the retrived URL's, never allow caching.
         """
-        print("Sending file: %s" % self.request.path)
+        log.debug("Sending file: %s" % self.request.path)
         seenurlpaths.append(str(self.request.path))
         return False
 
@@ -106,15 +130,15 @@ class DispatchDevice(tornado.web.RequestHandler):
         #   channel
         # as the initial request goes to port 443 anyway, we will just continue
         #   on this port
-        print("<< HTTP POST %s" % self.request.path)
+        log.debug("<< HTTP POST %s" % self.request.path)
         data = {
             "error": 0,
             "reason": "ok",
             "IP": args.serving_host,
             "port": DEFAULT_PORT_HTTPS
         }
-        print(">> %s" % self.request.path)
-        print(">> %s" % json.dumps(data, indent=4))
+        log.debug(">> %s" % self.request.path)
+        logjson(data)
         self.write(data)
         self.finish()
 
@@ -122,7 +146,7 @@ class DispatchDevice(tornado.web.RequestHandler):
 class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
     def open(self, *args):
-        logger.debug("<< WEBSOCKET OPEN")
+        log.debug("<< WEBSOCKET OPEN")
         # the device expects the server to generate and consistently provide
         #   an API key which equals the UUID format
         # it *must not* be the same apikey which the device uses in its
@@ -135,19 +159,19 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         self.device_model = "ITA-GZ1-GL"
 
     def on_message(self, message):
-        logger.debug("<< WEBSOCKET INPUT")
+        log.debug("<< WEBSOCKET INPUT")
         dct = json.loads(message)
-        logger.debug("<< %s" % json.dumps(dct, indent=4))
+        logjson(dct, False)
         # if dct.has_key("action"): # python2
         if "action" in dct:     # python3
-            print("~~~ device sent action request, ",
+            log.debug("~~~ device sent action request, ",
                   "acknowledging / answering...")
             if dct['action'] == "register":
                 # ITA-GZ1-GL, PSC-B01-GL, etc.
                 if "model" in dct and dct["model"]:
                     self.device_model = dct["model"]
-                    logger.info("We are dealing with a {} model.".format(self.device_model))
-                print("~~~~ register")
+                    log.info("We are dealing with a {} model.".format(self.device_model))
+                log.debug("~~~~ register")
                 data = {
                     "error": 0,
                     "deviceid": dct['deviceid'],
@@ -157,41 +181,41 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                         "hbInterval": 145
                     }
                 }
-                print(">> %s" % json.dumps(data, indent=4))
+                logjson(data)
                 self.write_message(data)
             if dct['action'] == "date":
-                print("~~~~ date")
+                log.debug("~~~~ date")
                 data = {
                     "error": 0,
                     "deviceid": dct['deviceid'],
                     "apikey": self.uuid,
                     "date": datetime.isoformat(datetime.today())[:-3] + 'Z'
                 }
-                print(">> %s" % json.dumps(data, indent=4))
+                logjson(data)
                 self.write_message(data)
             if dct['action'] == "query":
-                print("~~~~ query")
+                log.debug("~~~~ query")
                 data = {
                     "error": 0,
                     "deviceid": dct['deviceid'],
                     "apikey": self.uuid,
                     "params": 0
                 }
-                print(">> %s" % json.dumps(data, indent=4))
+                logjson(data)
                 self.write_message(data)
             if dct['action'] == "update":
-                print("~~~~ update")
+                log.debug("~~~~ update")
                 data = {
                     "error": 0,
                     "deviceid": dct['deviceid'],
                     "apikey": self.uuid
                 }
-                print(">> %s" % json.dumps(data, indent=4))
+                logjson(data)
                 self.write_message(data)
                 self.setup_completed = True
         # elif dct.has_key("sequence") and dct.has_key("error"): # python2
         elif "sequence" in dct and "error" in dct:
-            logger.debug(
+            log.debug(
                 "~~~ device acknowledged our action request (seq {}) "
                 "with error code {}".format(
                     dct['sequence'],
@@ -199,7 +223,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                 )
             )
         else:
-            logger.warn("## MOEP! Unknown request/answer from device!")
+            log.warn("## MOEP! Unknown request/answer from device!")
 
         if self.setup_completed and not self.test:
             # switching relais on and off - for fun and profit!
@@ -215,7 +239,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                 },
                 "from": "hackepeter"
             }
-            print(">> %s" % json.dumps(data, indent=4))
+            logjson(data)
             self.write_message(data)
             data = {
                 "action": "update",
@@ -229,7 +253,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                 },
                 "from": "hackepeter"
             }
-            print(">> %s" % json.dumps(data, indent=4))
+            logjson(data)
             self.write_message(data)
             data = {
                 "action": "update",
@@ -243,7 +267,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                 },
                 "from": "hackepeter"
             }
-            print(">> %s" % json.dumps(data, indent=4))
+            logjson(data)
             self.write_message(data)
             data = {
                 "action": "update",
@@ -257,7 +281,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                 },
                 "from": "hackepeter"
             }
-            print(">> %s" % json.dumps(data, indent=4))
+            logjson(data)
             self.write_message(data)
             data = {
                 "action": "update",
@@ -271,7 +295,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                 },
                 "from": "hackepeter"
             }
-            print(">> %s" % json.dumps(data, indent=4))
+            logjson(data)
             self.write_message(data)
             self.test = True
 
@@ -329,12 +353,12 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                         "version": "23.42.5"
                     }
                 }
-                print(">> %s" % json.dumps(data, indent=4))
+                logjson(data)
                 self.write_message(data)
                 self.upgrade = True
 
     def on_close(self):
-        logger.debug("~~ websocket close")
+        log.debug("~~ websocket close")
 
     def getFirmwareHash(self, filePath):
         hash_user = None
@@ -342,7 +366,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             with open(filePath, "rb") as firmware:
                 hash_user = sha256(firmware.read()).hexdigest()
         except IOError as e:
-            logger.warn(e)
+            log.warn(e)
         return hash_user
 
 
@@ -364,12 +388,14 @@ def defaultinterface():
     except:
         return None
 
+lastip4ips = []
 def ip4ips():
     '''A list of IP4 addresses on this host.
 
     This will try and return the default gateway first in the list, and will
     strip out localhost addresses automatically.
     '''
+    global lastip4ips
     ret = []
     defiface = defaultinterface()
     for iface in netifaces.interfaces():
@@ -384,6 +410,9 @@ def ip4ips():
                 ret.insert(0, addr)
             else:
                 ret.append(addr)
+    if ret != lastip4ips:
+        log.debug('Current IPs: %s', ret)
+        lastip4ips = ret
     return ret
 
 def hassonoffip():
@@ -408,11 +437,11 @@ def checkargs():
     for fn in [arduino_file, upgrade_file_user1, upgrade_file_user2]:
         fn = os.path.join('static', fn)
         if not os.path.isfile(fn):
-            print("Required file missing!", fn)
+            log.critical("Required file missing!", fn)
             sys.exit(1)
         f = open(fn, 'rb').read()
         if len(f) < 100000:
-            print("Binary file appears too small!", fn)
+            log.critical("Binary file appears too small!", fn)
             sys.exit(1)
 
     if args.no_prov:
@@ -440,17 +469,16 @@ def checkargs():
     # Ensure the given IP is actually what is associated with the host
     # and not already on a Sonoff WiFi network.
     if args.serving_host not in ip4ips():
-        print(
-            "** The IP address of <serve_host> (%s) is not " % args.serving_host,
-            "assigned to any interface on this machine.")
-        print(
-            "** Please change WiFi network to %s and make sure %s is " % (
-                args.wifi_ssid, args.serving_host),
-            "being assigned to your WiFi interface before connecting to the ",
-            "Sonoff device.")
+        log.info(
+            "** The IP address of <serve_host> ({}) is not assigned to any interface "
+            "on this machine.".format(args.serving_host))
+        log.info(
+            "** Please change WiFi network to {} and make sure {} is "
+            "being assigned to your WiFi interface before connecting to the "
+            "Sonoff device.".format(args.wifi_ssid, args.serving_host))
         sys.exit(1)
     if hasfinalstageip() or hassonoffip():
-        print('It looks like you are already on a Sonoff/Final stage WiFi '\
+        log.critical('It looks like you are already on a Sonoff/Final stage WiFi '\
             'network, please change to your normal WiFi network. If this '\
             'has already been done, you may need to modify the IP range of '\
             'your LAN to use this tool safely. If this is what you intended '\
@@ -463,10 +491,10 @@ def checkargs():
     if not args.wifi_password:
         args.wifi_password = promptforval("WiFi Password")
     print()
-    print('Using the following configuration:')
-    print('\tServer IP Address:', args.serving_host)
-    print('\tWiFi SSID:', args.wifi_ssid)
-    print('\tWiFi Password:', args.wifi_password)
+    log.info('Using the following configuration:')
+    log.info('\tServer IP Address: ' + args.serving_host)
+    log.info('\tWiFi SSID: ' + args.wifi_ssid)
+    log.info('\tWiFi Password: ' + '*' * len(args.wifi_password))
 
 def stage1():
     '''Accept the Sonoff WebSocket connection, and configure it.'''
@@ -479,21 +507,21 @@ def stage1():
         while True:
             conn_attempt += 1
             if hasfinalstageip():
-                print("Appear to have connected to the final stage IP, "\
+                log.info("Appear to have connected to the final stage IP, "\
                     "moving to next stage.")
                 return
             if hassonoffip():
                 break
             else:
                 if conn_attempt == 1:
-                    print("** Now connect via WiFi to your Sonoff device.")
-                    print("** Please change into the ITEAD WiFi",
-                        "network (ITEAD-100001XXXX). The default password",
+                    log.info("** Now connect via WiFi to your Sonoff device.")
+                    log.info("** Please change into the ITEAD WiFi "
+                        "network (ITEAD-100001XXXX). The default password "
                         "is 12345678.")
-                    print("To reset the Sonoff to defaults, press",
-                        "the button for 7 seconds and the light will",
+                    log.info("To reset the Sonoff to defaults, press "
+                        "the button for 7 seconds and the light will "
                         "start flashing rapidly.")
-                    print("** This application should be kept running",
+                    log.info("** This application should be kept running "
                         "and will wait until connected to the Sonoff...")
                 sleep(2)
                 print(".", end="", flush=True)
@@ -501,21 +529,23 @@ def stage1():
 
     http = Http(timeout=2)
 
-    print("~~ Connection attempt")
+    log.debug("~~ Connection attempt")
     conn_attempt = 0
     while True:
         conn_attempt += 1
-        print(">> HTTP GET /10.10.7.1/device")
+        log.debug(">> HTTP GET /10.10.7.1/device")
         try:
             resp, cont = http.request("http://10.10.7.1/device", "GET")
             break
         except socket_error as e:
-            print(e)
+            log.debug(e)
             continue
 
     dct = json.loads(cont.decode('utf-8'))
-    print("<< %s" % json.dumps(dct, indent=4))
+    logjson(dct, False)
 
+    if not args.serving_host:
+        raise ValueError('args.serving_host is required')
     data = {
         "version": 4,
         "ssid": args.wifi_ssid,
@@ -523,17 +553,17 @@ def stage1():
         "serverName": args.serving_host,
         "port": DEFAULT_PORT_HTTPS
     }
-    print(">> HTTP POST /10.10.7.1/ap")
-    print(">> %s", json.dumps(data, indent=4))
+    log.debug(">> HTTP POST /10.10.7.1/ap")
+    logjson(data)
     resp, cont = http.request(
         "http://10.10.7.1/ap", "POST", json.dumps(data))
     dct = json.loads(cont.decode('utf-8'))
-    print("<< %s" % json.dumps(dct, indent=4))
+    logjson(dct, False)
 
-    print("~~ Provisioning completed")
+    log.info("~~ Provisioning completed")
 
 def stage2():
-    print("Starting stage2...")
+    log.info("Starting stage2...")
     app = make_app()
     if not args.no_check_ip:
         net_valid = False
@@ -545,20 +575,19 @@ def stage2():
                 break
             else:
                 if conn_attempt == 1:
-                    print(
-                        "** The IP address of <serve_host> (%s) is not " % args.serving_host,
-                        "assigned to any interface on this machine.")
-                    print(
-                        "** Please change WiFi network to %s and make sure %s is" % (
-                            args.wifi_ssid, args.serving_host),
-                        "being assigned to your WiFi interface.")
-                    print("** This application should be kept running",
+                    log.info("** The IP address of <serve_host> ({}) is not assigned "
+                        "to any interface on this machine.".format(args.serving_host))
+                    log.info(
+                        "** Please change WiFi network to {} and make sure {} is "
+                        "being assigned to your WiFi interface.".format(
+                            args.wifi_ssid, args.serving_host))
+                    log.info("** This application should be kept running "
                         "and will wait until connected to the WiFi...")
                 sleep(2)
                 print(".", end="", flush=True)
                 continue
 
-    print("~~ Starting web server (HTTP port: %s, HTTPS port %s)" % (
+    log.info("~~ Starting web server (HTTP port: %s, HTTPS port %s)" % (
         DEFAULT_PORT_HTTP, DEFAULT_PORT_HTTPS))
 
 
@@ -577,7 +606,7 @@ def stage2():
     # listening on HTTPS port to catch initial POST request to eu-disp.coolkit.cc
     app_ssl.listen(DEFAULT_PORT_HTTPS)
 
-    print("~~ Waiting for device to connect")
+    log.info("~~ Waiting for device to connect")
 
     stage3thread = threading.Thread(target=stage3, daemon=True)
     stage3thread.start()
@@ -590,15 +619,15 @@ def stage3():
     while not hasfinalstageip():
         if count % 30 == 0:
             print()
-            print("*** IMPORTANT! ***")
-            print("** AFTER the first download is COMPLETE, with in a minute or so",
+            log.info("*** IMPORTANT! ***")
+            log.info("** AFTER the first download is COMPLETE, with in a minute or so "
                 'you should connect to the new SSID "FinalStage" to finish the process.')
-            print('** ONLY disconnect when the new "FinalStage" SSID is visible',
+            log.info('** ONLY disconnect when the new "FinalStage" SSID is visible '
                 'as an available WiFi network.')
-            print('This server should automatically be allocated the IP address:',
+            log.info('This server should automatically be allocated the IP address: '
                 '192.168.4.2.')
-            print('If you have successfully connected to "FinalStage" and this is',
-                'not the IP Address you were allocated, please ensure no other',
+            log.info('If you have successfully connected to "FinalStage" and this is '
+                'not the IP Address you were allocated, please ensure no other '
                 'device has connected, and reboot your Sonoff.')
         count += 1
         sleep(2)
@@ -613,10 +642,10 @@ def stage3():
             else:
                 print()
                 print()
-                print('It appears we have been disconnected from the',
-                    '"FinalStage" SSID, however the final image has not been',
-                    'downloaded. Reconnect to "FinalStage" when it returns to',
-                    'continue the process (this may require a power cycle of',
+                log.info('It appears we have been disconnected from the '
+                    '"FinalStage" SSID, however the final image has not been '
+                    'downloaded. Reconnect to "FinalStage" when it returns to '
+                    'continue the process (this may require a power cycle of '
                     'your Sonoff device)...')
                 print()
                 while not hasfinalstageip():
@@ -626,14 +655,14 @@ def stage3():
         if count % 30 == 0:
             print()
             print()
-            print('The "FinalStage" SSID will disappear when the device has been',
+            log.info('The "FinalStage" SSID will disappear when the device has been '
                 'fully flashed and image_arduino.bin has been installed')
-            print('Once "FinalStage" has gone away, you can stop this program')
+            log.info('Once "FinalStage" has gone away, you can stop this program')
         count += 1
         sleep(2)
         print(".", end="", flush=True)
 
-    print('No longer on "FinalStage" SSID, all done!')
+    log.info('No longer on "FinalStage" SSID, all done!')
     _thread.interrupt_main()
 
 def main():
@@ -646,4 +675,4 @@ if __name__ == '__main__':
     try:
         main()
     except (KeyboardInterrupt, SystemExit):
-        logger.info("Quitting.")
+        log.info("Quitting.")
