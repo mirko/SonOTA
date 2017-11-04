@@ -90,6 +90,6 @@ Please see the [wiki](https://github.com/mirko/SonOTA/wiki) for known working co
 # Reporting issues
 
 If you are having an issue runinng this, please include the following information:
- - The full output of the actual run (remember to remove your WiFi password)
+ - The full output of the actual run, a log file is now produced which can be uploaded by dragging and dropping the file in your web browser
  - The model and version of your Sonoff device
-
+ - The operating system and version of Python you're using
