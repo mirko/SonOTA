@@ -667,6 +667,7 @@ def stage3():
 
 def main():
     checkargs()
+    log.info("Platform: %s" % (sys.platform))
     if not args.no_prov:
         stage1()
     stage2()
