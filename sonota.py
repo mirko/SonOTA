@@ -164,8 +164,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         logjson(dct, False)
         # if dct.has_key("action"): # python2
         if "action" in dct:     # python3
-            log.debug("~~~ device sent action request, ",
-                  "acknowledging / answering...")
+            log.debug("~~~ device sent action request, acknowledging / answering...")
             if dct['action'] == "register":
                 # ITA-GZ1-GL, PSC-B01-GL, etc.
                 if "model" in dct and dct["model"]:
