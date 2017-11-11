@@ -127,20 +127,25 @@ class OTAUpdate(tornado.web.StaticFileHandler):
 class SlowOTAUpdate(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self, path):
-        log.debug("Slow Sending file: %s" % self.request.path)
+        log.debug("Slow Sending file: %s (This may take several minutes)" % self.request.path)
         seenurlpaths.append(str(self.request.path))
         f = open(os.path.join('static', path), 'rb')
         f.seek(0, 2)
         length = f.tell()
         f.seek(0, 0)
         self.set_header('Content-Length', str(length))
+        self.set_header('Content-Type', 'application/octet-stream')
+        chunk = f.read(10)
+        self.write(chunk)
+        yield self.flush()
         while True:
             chunk = f.read(1400)
             if not chunk:
                 break
             self.write(chunk)
-            self.flush()
-            yield gen.sleep(0.1)
+            yield self.flush()
+            print("  {}%   ".format(int(f.tell()*100/length)), end="\r", flush=True)
+            yield gen.sleep(0.3)
 
 class DispatchDevice(tornado.web.RequestHandler):
 
