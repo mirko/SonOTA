@@ -134,6 +134,12 @@ class SlowOTAUpdate(tornado.web.RequestHandler):
         length = f.tell()
         f.seek(0, 0)
         self.set_header('Content-Length', str(length))
+        self.set_header('X-Powered-By', 'Express')
+        self.set_header('Transfer-Encoding', '')
+        self.set_header('Content-Disposition', 
+                'attachment; filename="{}"'.format(path))
+        self.set_header('Accept-Ranges', 'bytes')
+        self.set_header('Cache-Control', 'public, max-age=0')
         self.set_header('Content-Type', 'application/octet-stream')
         chunk = f.read(10)
         self.write(chunk)
