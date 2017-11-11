@@ -38,6 +38,7 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
+from tornado import gen
 
 # the original bootloader expects so called v2 images which start with the
 #   magic byte 0xEA instead of the Arduino ones (v1) starting with 0xE9
@@ -123,6 +124,24 @@ class OTAUpdate(tornado.web.StaticFileHandler):
         seenurlpaths.append(str(self.request.path))
         return False
 
+class SlowOTAUpdate(tornado.web.RequestHandler):
+    @gen.coroutine
+    def get(self, path):
+        log.debug("Slow Sending file: %s" % self.request.path)
+        seenurlpaths.append(str(self.request.path))
+        f = open(os.path.join('static', path), 'rb')
+        f.seek(0, 2)
+        length = f.tell()
+        f.seek(0, 0)
+        self.set_header('Content-Length', str(length))
+        while True:
+            chunk = f.read(1400)
+            if not chunk:
+                break
+            self.write(chunk)
+            self.flush()
+            yield gen.sleep(0.1)
+
 class DispatchDevice(tornado.web.RequestHandler):
 
     def post(self):
@@ -131,6 +150,8 @@ class DispatchDevice(tornado.web.RequestHandler):
         # as the initial request goes to port 443 anyway, we will just continue
         #   on this port
         log.debug("<< HTTP POST %s" % self.request.path)
+        if not args.serving_host:
+            raise ValueError('args.serving_host is required')
         data = {
             "error": 0,
             "reason": "ok",
@@ -218,7 +239,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                 "~~~ device acknowledged our action request (seq {}) "
                 "with error code {}".format(
                     dct['sequence'],
-                    dct['error']
+                    dct['error'] # 404 here
                 )
             )
         else:
@@ -376,7 +397,8 @@ def make_app():
         # handling actual payload communication on WebSockets
         (r'/api/ws', WebSocketHandler),
         # serving upgrade files via HTTP
-        (r'/ota/(.*)', OTAUpdate, {'path': "static/"})
+        #(r'/ota/(.*)', OTAUpdate, {'path': "static/"})
+        (r'/ota/(.*)', SlowOTAUpdate),
         #(r'/ota/(.*)', tornado.web.StaticFileHandler, {'path': "static/"})
     ])
 
