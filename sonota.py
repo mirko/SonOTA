@@ -255,6 +255,9 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                     dct['error'] # 404 here
                 )
             )
+            if dct['error'] == 404:
+                log.error("Received a 404 error, try running with " \
+                    "'--slowstream' option.")
         else:
             log.warn("## MOEP! Unknown request/answer from device!")
 
