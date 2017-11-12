@@ -103,6 +103,8 @@ parser.add_argument("--no-check-ip", help="Do not check for correct network sett
  applied on your interface(s).", action="store_true")
 parser.add_argument("--legacy", action="store_true", help="Enable legacy mode for devices with older firmware "
                     "(requires root permission)")
+parser.add_argument("-s", "--slowstream", action="store_true",
+        help="Serve files slowly, use if getting 404 errors")
 args = parser.parse_args()
 
 if args.legacy:     # requires root permission
@@ -402,16 +404,17 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
 
 def make_app():
-    return tornado.web.Application([
+    apps = [
         # handling initial dispatch HTTPS POST call to eu-disp.coolkit.cc
         (r'/dispatch/device', DispatchDevice),
         # handling actual payload communication on WebSockets
         (r'/api/ws', WebSocketHandler),
-        # serving upgrade files via HTTP
-        #(r'/ota/(.*)', OTAUpdate, {'path': "static/"})
-        (r'/ota/(.*)', SlowOTAUpdate),
-        #(r'/ota/(.*)', tornado.web.StaticFileHandler, {'path': "static/"})
-    ])
+    ]
+    if args.slowstream:
+        apps.append((r'/ota/(.*)', SlowOTAUpdate))
+    else:
+        apps.append((r'/ota/(.*)', OTAUpdate, {'path': "static/"}))
+    return tornado.web.Application(apps)
 
 def defaultinterface():
     '''The interface the default gateway is on, if there is one.'''
