@@ -13,7 +13,7 @@ The included final Arduino Sketch binary is v5.8.0 from the Sonoff-Tasmota relea
 **Windows users:**
 * Download and install Python v3.5.x: https://www.python.org/downloads/windows/
   (Python v3.5.x is recommended for Windows as the `netifaces` module has prebuilt wheels)
-* All firewalls must be disabled when running SonOTA
+* **All firewalls must be disabled** when running SonOTA
 
 **Linux users:**
 * Download and install `python3`, `python3-pip` and `python3-dev` packages (Python v3.5 or later is required)
