@@ -5,7 +5,7 @@
 The latest updates include binary files (thanks to the great work by https://github.com/khcnz/Espressif2Arduino) so you can update your Sonoff device
 from start to finish without having to build anything. 
 
-The included final Arduino Sketch binary is v5.8.0 from the Sonoff-Tasmota releases page: https://github.com/arendst/Sonoff-Tasmota/releases
+The included final Arduino Sketch binary is v5.9.1, defaulting `WIFI_CONFIG_TOOL` to `WIFI_MANAGER`.
 
 
 ### Prerequisites
@@ -35,10 +35,8 @@ Once installed, you can run SonOTA (`./sonota.py`, you may need something like `
 
 **Ensure all firewalls are disabled on all WiFi networks, including FinalStage when connected.** This is the most common reason things to not complete.
 
-Once complete and Sonoff-Tasmota is installed, when the LED starts flashing, you can enable AP mode by pressing the button 4 times (and waiting for a reboot, and the LED to start flashing again, it will then broadcast an AP `sonoff-###`). Alternatively you can set up a temporary AP and the Sonoff will connect to that automatically using these details: 
- * SSID: `indebuurt1`
- * Password: `VnsqrtnrsddbrN`
- 
+Once complete and Sonoff-Tasmota is installed, you will have an AP called `sonoff-####` (note: this will be up for a minute then down for a minute until configured).
+
 For more information see the [Sonoff-Tasmota Initial Config](https://github.com/arendst/Sonoff-Tasmota/wiki/Initial-Configuration) and [Button Functionality](https://github.com/arendst/Sonoff-Tasmota/wiki/Button-usage).
 
 ### Update Steps
