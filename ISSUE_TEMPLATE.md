@@ -2,5 +2,5 @@
 - Python Version: 
 - Sonoff model: 
 
-Please also drag and drop the log file to the issue so it is attached.
+Please also drag and drop the generated `debug_########.log` file onto the issue so it is attached.
 
