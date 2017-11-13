@@ -86,7 +86,7 @@ def logjson(data, outbound=True):
 
 # A horrible hack to track what has been downloaded in tornado so we don't
 # exit early
-seenurlpaths = []
+seenfiles = []
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--serving-host", help="The host's ip address which will handle the HTTP(S)/WebSocket requests initiated by the device.\
@@ -123,14 +123,14 @@ class OTAUpdate(tornado.web.StaticFileHandler):
         """Used as a hook to get the retrived URL's, never allow caching.
         """
         log.debug("Sending file: %s" % self.request.path)
-        seenurlpaths.append(str(self.request.path))
+        seenfiles.append(os.path.basename(str(self.request.path)))
         return False
 
 class SlowOTAUpdate(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self, path):
         log.debug("Slow Sending file: %s (This may take several minutes)" % self.request.path)
-        seenurlpaths.append(str(self.request.path))
+        seenfiles.append(os.path.basename(str(self.request.path)))
         f = open(os.path.join('static', path), 'rb')
         f.seek(0, 2)
         length = f.tell()
@@ -138,7 +138,7 @@ class SlowOTAUpdate(tornado.web.RequestHandler):
         self.set_header('Content-Length', str(length))
         self.set_header('X-Powered-By', 'Express')
         self.set_header('Transfer-Encoding', '')
-        self.set_header('Content-Disposition', 
+        self.set_header('Content-Disposition',
                 'attachment; filename="{}"'.format(path))
         self.set_header('Accept-Ranges', 'bytes')
         self.set_header('Cache-Control', 'public, max-age=0')
@@ -146,6 +146,7 @@ class SlowOTAUpdate(tornado.web.RequestHandler):
         chunk = f.read(10)
         self.write(chunk)
         yield self.flush()
+        yield gen.sleep(0.9)
         while True:
             chunk = f.read(1400)
             if not chunk:
@@ -256,8 +257,13 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                 )
             )
             if dct['error'] == 404:
+                log.error("*************************************************")
                 log.error("Received a 404 error, try running with " \
                     "'--slowstream' option.")
+                log.error("*************************************************")
+                log.info("Setting slowstream for following call...")
+                args.slowstream = True
+                self.upgrade = True
         else:
             log.warn("## MOEP! Unknown request/answer from device!")
 
@@ -340,7 +346,13 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             hash_user1 = self.getFirmwareHash("static/%s" % upgrade_file_user1)
             hash_user2 = self.getFirmwareHash("static/%s" % upgrade_file_user2)
 
+            if not args.serving_host:
+                raise ValueError('args.serving_host is required')
             if hash_user1 and hash_user2:
+                if args.slowstream:
+                    udir = 'slowota'
+                else:
+                    udir = 'ota'
                 data = {
                     "action": "upgrade",
                     "deviceid": dct['deviceid'],
@@ -356,24 +368,18 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                         # provide our custom image as user1 as well as user2.
                         # unfortunately this also means that our firmware image
                         # must not exceed FLASH_SIZE / 2 - (bootloader - spiffs)
-                        # TODO: figure out how to build user1 and user2 incl.
-                        #   its necessary differences
-                        # TODO: check whether orig. bootloader can load and boot
-                        #   code bigger than FLASH_SIZE / 2 - (bootloader - spiffs)
-                        # TODO: check if original bootloader can also load v1
-                        # images
                         "binList": [
                             {
-                                "downloadUrl": "http://%s:%s/ota/%s" %
-                                (args.serving_host, DEFAULT_PORT_HTTP, upgrade_file_user1),
+                                "downloadUrl": "http://%s:%s/%s/%s" %
+                                (args.serving_host, DEFAULT_PORT_HTTP, udir, upgrade_file_user1),
                                 # the device expects and checks the sha256 hash of
                                 #   the transmitted file
                                 "digest": hash_user1,
                                 "name": "user1.bin"
                             },
                             {
-                                "downloadUrl": "http://%s:%s/ota/%s" %
-                                (args.serving_host, DEFAULT_PORT_HTTP, upgrade_file_user2),
+                                "downloadUrl": "http://%s:%s/%s/%s" %
+                                (args.serving_host, DEFAULT_PORT_HTTP, udir, upgrade_file_user2),
                                 # the device expects and checks the sha256 hash of
                                 #   the transmitted file
                                 "digest": hash_user2,
@@ -412,11 +418,9 @@ def make_app():
         (r'/dispatch/device', DispatchDevice),
         # handling actual payload communication on WebSockets
         (r'/api/ws', WebSocketHandler),
+        (r'/slowota/(.*)', SlowOTAUpdate),
+        (r'/ota/(.*)', OTAUpdate, {'path': "static/"}),
     ]
-    if args.slowstream:
-        apps.append((r'/ota/(.*)', SlowOTAUpdate))
-    else:
-        apps.append((r'/ota/(.*)', OTAUpdate, {'path': "static/"}))
     return tornado.web.Application(apps)
 
 def defaultinterface():
@@ -674,7 +678,7 @@ def stage3():
     count = 0
     while True:
         if not hasfinalstageip():
-            if '/ota/image_arduino.bin' in seenurlpaths:
+            if 'image_arduino.bin' in seenfiles:
                 # The arduino image has been downloaded, exit
                 break
             else:
