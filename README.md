@@ -1,8 +1,8 @@
 # SonOTA
 
-A script to update a Sonoff device from the stock firmware to [Sonoff-Tasmota](https://github.com/arendst/Sonoff-Tasmota/).
+A script to update a Sonoff device from the stock firmware to [Sonoff-Tasmota](https://github.com/arendst/Sonoff-Tasmota/) purely over WiFi.
 
-This is **beta** software, and it may not work 100% of the time, and require to manually flash your device.
+This is **beta** software, and it may not work 100% of the time, and require to manually flash your device using serial.
 
 ## Updating a new Sonoff device
 
