@@ -698,13 +698,17 @@ def stage3():
             print()
             print()
             log.info('The "FinalStage" SSID will disappear when the device has been '
-                'fully flashed and image_arduino.bin has been installed')
-            log.info('Once "FinalStage" has gone away, you can stop this program')
+                'fully flashed and image_arduino.bin has been installed.')
+            log.info('If there is no "Sending file: /ota/image_arduino.bin" '
+                'log entry, ensure all firewalls have been COMPLETELY disabled '
+                'on your system.')
         count += 1
         sleep(2)
         print(".", end="", flush=True)
 
-    log.info('No longer on "FinalStage" SSID, all done!')
+    log.info('No longer on "FinalStage" SSID, all done! Now connect to the '
+            'sonoff-#### SSID and configure for your WiFi (it will not be '
+            'configured).')
     _thread.interrupt_main()
 
 def main():
