@@ -97,7 +97,7 @@ The script is fairly well documented (I think) - apart from that above stated li
 
 
 
-###Building own Exe File
+### Building own Exe File
 just run the built.bat in the Release folder to create your own sonota.exe. You will find the exe in the Release/dist folder.
 
 # Compatibility
