@@ -2,4 +2,10 @@
 *.log
 *.pyc
 *.pyo
+.idea
 
+/Release/build/*
+/Release/dist/*
+
+
+!empty
