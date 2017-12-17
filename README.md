@@ -1,5 +1,5 @@
 # SonOTA EXE
-I generated a exe bundle with pyinstaller. With this exe its not neccessery to install python on your local machine.
+I generated an exe bundle with pyinstaller. With this exe its not neccessery to install python on your local machine.
 Python, all needed libaries and the sonota.py are included.
 Orginal bin Files from SonOTA are used.
 
