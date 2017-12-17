@@ -343,8 +343,8 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
         if self.setup_completed and self.test and not self.upgrade:
 
-            hash_user1 = self.getFirmwareHash(resource_path("static\%s" % upgrade_file_user1))
-            hash_user2 = self.getFirmwareHash(resource_path("static\%s" % upgrade_file_user2))
+            hash_user1 = self.getFirmwareHash(resource_path(os.path.join("static", upgrade_file_user1)))
+            hash_user2 = self.getFirmwareHash(resource_path(os.path.join("static", upgrade_file_user2)))
 
             if not args.serving_host:
                 raise ValueError('args.serving_host is required')
