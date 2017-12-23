@@ -343,8 +343,8 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
         if self.setup_completed and self.test and not self.upgrade:
 
-            hash_user1 = self.getFirmwareHash("static/%s" % upgrade_file_user1)
-            hash_user2 = self.getFirmwareHash("static/%s" % upgrade_file_user2)
+            hash_user1 = self.getFirmwareHash(resource_path(os.path.join("static", upgrade_file_user1)))
+            hash_user2 = self.getFirmwareHash(resource_path(os.path.join("static", upgrade_file_user2)))
 
             if not args.serving_host:
                 raise ValueError('args.serving_host is required')
@@ -408,7 +408,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             with open(filePath, "rb") as firmware:
                 hash_user = sha256(firmware.read()).hexdigest()
         except IOError as e:
-            log.warn(e)
+            log.warning(e)
         return hash_user
 
 
@@ -419,7 +419,7 @@ def make_app():
         # handling actual payload communication on WebSockets
         (r'/api/ws', WebSocketHandler),
         (r'/slowota/(.*)', SlowOTAUpdate),
-        (r'/ota/(.*)', OTAUpdate, {'path': "static/"}),
+        (r'/ota/(.*)', OTAUpdate, {'path': resource_path("static/")}),
     ]
     return tornado.web.Application(apps)
 
@@ -474,10 +474,21 @@ def promptforval(msg):
         if val:
             return val
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.dirname(sys.argv[0])
+
+    return os.path.join(base_path, relative_path)
+
 def checkargs():
     # Make sure all of the binary files that are needed are there
     for fn in [arduino_file, upgrade_file_user1, upgrade_file_user2]:
         fn = os.path.join('static', fn)
+        fn = resource_path(fn)
         if not os.path.isfile(fn):
             log.critical("Required file missing!", fn)
             sys.exit(1)
@@ -642,8 +653,8 @@ def stage2():
     app.listen(DEFAULT_PORT_HTTP)
 
     app_ssl = tornado.httpserver.HTTPServer(app, ssl_options={
-        "certfile": "ssl/server.crt",
-        "keyfile": "ssl/server.key",
+        "certfile": resource_path("ssl/server.crt"),
+        "keyfile": resource_path("ssl/server.key"),
     })
     # listening on HTTPS port to catch initial POST request to eu-disp.coolkit.cc
     app_ssl.listen(DEFAULT_PORT_HTTPS)

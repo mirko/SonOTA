@@ -15,6 +15,7 @@ The included final Arduino Sketch binary is v5.9.1, defaulting `WIFI_CONFIG_TOOL
 ### Prerequisites
 
 **Windows users:**
+Skip if you use the sonota.exe file
 * Download and install Python v3.5.x: https://www.python.org/downloads/windows/
   (Python v3.5.x is recommended for Windows as the `netifaces` module has prebuilt wheels)
 * **All firewalls must be disabled** when running SonOTA
@@ -32,10 +33,19 @@ The included final Arduino Sketch binary is v5.9.1, defaulting `WIFI_CONFIG_TOOL
 
 ### Running
 
+Method 1)
 After setting up the prerequisites, download the repo (either using `git clone`, or downloading and extracting the .zip file). Then install the Python dependencies by changing into the SonOTA directory and running:
 `pip3 install --user -r requirements.txt`
 
 Once installed, you can run SonOTA (`./sonota.py`, you may need something like `python3 sonota.py` on Windows), and it will prompt you for the various settings it needs, and guide you through what to do for each step.
+
+Method 2)
+Download latest sonota.exe from the releases page
+
+Run the exe as administrator**
+
+A Console Windows will popup and it will prompt you for the various settings it needs, and guide you through what to do for each step.
+
 
 **Ensure all firewalls are disabled on all WiFi networks, including FinalStage when connected.** This is the most common reason things to not complete.
 
@@ -84,6 +94,11 @@ This program is based on research documented here:
 - https://wiki.almeroth.com/doku.php?id=projects:sonoff
 
 The script is fairly well documented (I think) - apart from that above stated links should provide some context of what's been done how and why. Feel free to open issue tickets or contact me directly: sonota@nanl.de
+
+
+
+### Building own Exe File
+just run the built.bat in the Release folder to create your own sonota.exe. You will find the exe in the Release/dist folder.
 
 # Compatibility
 
