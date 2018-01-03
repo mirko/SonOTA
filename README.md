@@ -4,6 +4,8 @@ A script to update a Sonoff device from the stock firmware to [Sonoff-Tasmota](h
 
 This is **beta** software, and it may not work 100% of the time, and require to manually flash your device using serial.
 
+# ATTENTION: It appears SonOTA does *not* work with devices running firmware version >= 1.6! #
+
 ## Updating a new Sonoff device
 
 The latest updates include binary files (thanks to the great work by https://github.com/khcnz/Espressif2Arduino) so you can update your Sonoff device
