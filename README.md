@@ -6,6 +6,8 @@ This is **beta** software, and it may not work 100% of the time, and require to 
 
 # ATTENTION: It appears SonOTA does *not* work with devices running firmware version >= 1.6! #
 
+See [#58](https://github.com/mirko/SonOTA/issues/58) for more information. Please request ITEAD fix this here: http://disq.us/p/1oqbm8m (_maybe_ with enough requests they'll do something)
+
 ## Updating a new Sonoff device
 
 The latest updates include binary files (thanks to the great work by https://github.com/khcnz/Espressif2Arduino) so you can update your Sonoff device
