@@ -8,6 +8,8 @@ This is **beta** software, and it may not work 100% of the time, and require to 
 
 See [#58](https://github.com/mirko/SonOTA/issues/58) for more information. Please request ITEAD fix this here: http://disq.us/p/1oqbm8m (_maybe_ with enough requests they'll do something)
 
+Note: Not all ITEAD Devices use the same Firmware. Be sure to check the [Supported Device List](https://github.com/mirko/SonOTA/wiki#known-working-configurations) in the Wiki
+
 ## Updating a new Sonoff device
 
 The latest updates include binary files (thanks to the great work by https://github.com/khcnz/Espressif2Arduino) so you can update your Sonoff device
