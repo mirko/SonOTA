@@ -6,7 +6,7 @@ This is **beta** software, and it may not work 100% of the time, and require to 
 
 # ATTENTION: It appears SonOTA does *not* work with devices running firmware version >= 1.6! #
 
-See [#58](https://github.com/mirko/SonOTA/issues/58) for more information. Please request ITEAD fix this here: http://disq.us/p/1oqbm8m (_maybe_ with enough requests they'll do something)
+See [#58](https://github.com/mirko/SonOTA/issues/58) for more information. Please request ITEAD to allow this again here: http://disq.us/p/1oqbm8m (_maybe_ with enough requests they'll do something, downgrading to the older firmware feels like the ideal solution for everyone)
 
 ## Updating a new Sonoff device
 
