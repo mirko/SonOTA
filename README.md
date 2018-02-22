@@ -6,7 +6,7 @@ This is **beta** software, and it may not work 100% of the time, and require to 
 
 # ATTENTION: It appears SonOTA does *not* work with devices running firmware version >= 1.6! #
 
-See [#58](https://github.com/mirko/SonOTA/issues/58) for more information. Please request ITEAD to allow this again here: http://disq.us/p/1oqbm8m (_maybe_ with enough requests they'll do something, downgrading to the older firmware feels like the ideal solution for everyone)
+See [#58](https://github.com/mirko/SonOTA/issues/58) for more information. Please request ITEAD to allow downgrading so this can work again here: http://disq.us/p/1oqbm8m and here: http://support.iteadstudio.com/support/discussions/topics/11000017070 (_maybe_ with enough requests they'll do something, downgrading to the older firmware feels like the ideal solution for everyone). Through the second site you may also be able to submit a support request, there have been mixed responses from this as well.
 
 Note: Not all ITEAD Devices use the same Firmware. Be sure to check the [Supported Device List](https://github.com/mirko/SonOTA/wiki#known-working-configurations) in the Wiki
 
