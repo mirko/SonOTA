@@ -1,4 +1,47 @@
-# SonOTA
+# SonOTA EXE
+I generated an exe bundle with pyinstaller. With this exe its not neccessery to install python on your local machine.
+Python, all needed libaries and the sonota.py are included.
+Orginal bin Files from SonOTA are used.
+
+# HowTo
+## 1)
+Download the sonota.exe from the [Release Page](https://github.com/reloxx13/SonOTA/releases/latest)
+OR
+Downlaod the repo and and follow the old school Tutorial. From their you can generate your own .exe with pyinstaller.
+You can use the included build.bat
+
+## 2)
+**Ensure all firewalls are disabled on all WiFi networks, including FinalStage when connected.** This is the most common reason things to not complete.
+
+## 3)
+Run the exe as administrator
+
+## 4)
+A commandline window will open, starting the sonota.py script and it will prompt you for the various settings it needs, and guide you through what to do for each step.
+
+
+Once complete and Sonoff-Tasmota is installed, you will have an AP called `sonoff-####` (note: this will be up for a minute then down for a minute until configured).
+
+For more information see the [Sonoff-Tasmota Initial Config](https://github.com/arendst/Sonoff-Tasmota/wiki/Initial-Configuration) and [Button Functionality](https://github.com/arendst/Sonoff-Tasmota/wiki/Button-usage).
+
+## Detailed Steps
+
+The update will go as follows (assuming a stock Sonoff device, the included .bin files have been tested with a Sonoff Basic and a Sonoff Dual). The program will prompt you what to do for each step as required.
+
+1. You will be promted to fill out the settings for your network (the "server" IP, this is the IP of the PC you are running `sonota` on, and the SSID and password for your WiFi). (These can also be passed as command line arguments if preferred, or doing a lot of devices.)
+2. Connect to the `ITEAD-*` WiFi network, you may need to reset your Sonoff to defaults to do this. This stage tells the Sonoff where to get future updates.
+3. Typically, you will be disconnected automatically from the `ITEAD-*` WiFi network, and your PC will reconnect to your normal network. So this stage will require no intervention, and the Sonoff will connect to your PC to download the required firmware.
+4. Once the firmware has been downloaded, there will be a new `FinalStage` SSID that you can connect to. Do this, and the device will then download the final stages of the firmware, including the Arduino image, replacing the default boot loader.
+5. That's it! You should be all done and ready to use your new Arduino Firmware (see the [Running](#running) section).
+
+
+
+
+# Old School:
+If you dont want to run the exe, you can still use the old orginal method
+
+
+## SonOTA
 
 A script to update a Sonoff device from the stock firmware to [Sonoff-Tasmota](https://github.com/arendst/Sonoff-Tasmota/) purely over WiFi.
 
