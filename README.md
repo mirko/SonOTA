@@ -4,7 +4,9 @@ A script to update a Sonoff device from the stock firmware to [Sonoff-Tasmota](h
 
 This is **beta** software, and it may not work 100% of the time, and require to manually flash your device using serial.
 
-# ATTENTION: It appears SonOTA does *not* work with devices running firmware version >= 1.6! #
+# ATTENTION: It appears SonOTA does *not* work with devices running firmware version 1.x >= 1.6! #
+
+If you have a device running v2.x, please refer to the wiki as to known working versions.
 
 See [#58](https://github.com/mirko/SonOTA/issues/58) for more information. Please request ITEAD to allow downgrading so this can work again here: http://disq.us/p/1oqbm8m and here: http://support.iteadstudio.com/support/discussions/topics/11000017070 (_maybe_ with enough requests they'll do something, downgrading to the older firmware feels like the ideal solution for everyone). Through the second site you may also be able to submit a support request, there have been mixed responses from this as well.
 
