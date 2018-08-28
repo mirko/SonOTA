@@ -29,12 +29,12 @@ Skip if you use the sonota.exe file
 * **All firewalls must be disabled** when running SonOTA
 
 **Linux users:**
-* Download and install `python3`, `python3-pip` and `python3-dev` packages (Python v3.5 or later is required)
+* Download and install `python3`, `python3-pip` and `python3-dev` packages (Python v3.5 or v3.6 is required)
 * Update `pip` by running: `python3 -m pip install --upgrade pip` (see #22 for more information)
 * All firewalls must be disabled when running SonOTA
 
 **Mac users:**
-* Downloaded and install the latest Python 3 for Mac: https://www.python.org/downloads/
+* Downloaded and install the latest Python 3.6 for Mac: https://www.python.org/downloads/
 * Install the clang developer tools if prompted during the `pip` install phase
 * All firewalls must be disabled when running SonOTA
 
