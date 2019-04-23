@@ -25,6 +25,7 @@ import os
 import sys
 import threading
 import _thread
+import ssl
 from datetime import datetime
 from hashlib import sha256
 from httplib2 import Http
@@ -655,6 +656,7 @@ def stage2():
     app_ssl = tornado.httpserver.HTTPServer(app, ssl_options={
         "certfile": resource_path("ssl/server.crt"),
         "keyfile": resource_path("ssl/server.key"),
+        "ssl_version": ssl.PROTOCOL_TLSv1_1,
     })
     # listening on HTTPS port to catch initial POST request to eu-disp.coolkit.cc
     app_ssl.listen(DEFAULT_PORT_HTTPS)
