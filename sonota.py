@@ -442,7 +442,10 @@ def ip4ips():
     ret = []
     defiface = defaultinterface()
     for iface in netifaces.interfaces():
-        addresses = netifaces.ifaddresses(iface)
+        try:
+            addresses = netifaces.ifaddresses(iface)
+        except ValueError:  # You must specify a valid interface name.
+            continue
         if netifaces.AF_INET not in addresses:   # python3
             continue
         for afinet in addresses[netifaces.AF_INET]:
@@ -644,6 +647,11 @@ def stage2():
     log.info("~~ Starting web server (HTTP port: %s, HTTPS port %s)" % (
         DEFAULT_PORT_HTTP, DEFAULT_PORT_HTTPS))
 
+    # Ensure ProactorEventLoop not used on windows (not yet release in latest tornado)
+    # https://github.com/python/pyperformance/pull/65/files
+    if sys.platform == 'win32' and sys.version_info[:2] == (3, 8):
+        import asyncio
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     if args.legacy:
         old = make_app()
