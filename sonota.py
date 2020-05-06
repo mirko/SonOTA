@@ -629,6 +629,9 @@ def stage2():
         while True:
             conn_attempt += 1
             if args.serving_host in ip4ips():
+                if conn_attempt > 1:
+                    log.info("** Detected connection to {} as {}, proceeding.".format(
+                        args.wifi_ssid, args.serving_host))
                 break
             else:
                 if conn_attempt == 1:
